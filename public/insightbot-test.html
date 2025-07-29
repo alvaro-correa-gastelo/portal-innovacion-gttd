@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Innovación GTTD - InsightBot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0055A4 0%, #003d7a 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .auth-section {
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .auth-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .user-info {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+        
+        .chat-container {
+            height: 450px;
+            overflow-y: auto;
+            padding: 25px;
+            background: #ffffff;
+        }
+        
+        .message {
+            margin: 15px 0;
+            padding: 15px 20px;
+            border-radius: 15px;
+            max-width: 85%;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            margin-left: auto;
+            text-align: right;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e9ecef 100%);
+            border-bottom-left-radius: 5px;
+            border-left: 4px solid #0055A4;
+        }
+        
+        .input-section {
+            padding: 25px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input, select {
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #0055A4;
+            box-shadow: 0 0 0 3px rgba(0, 85, 164, 0.1);
+        }
+        
+        #message-input {
+            flex: 1;
+            font-size: 16px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #0055A4 0%, #003d7a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 85, 164, 0.3);
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-buttons button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            font-size: 13px;
+            padding: 10px 15px;
+        }
+        
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .online {
+            background: #28a745;
+            color: white;
+        }
+        
+        .offline {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0055A4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .response-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            .container { margin: 10px; }
+            .auth-controls { flex-direction: column; align-items: stretch; }
+            .test-buttons { flex-direction: column; }
+            .header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 InsightBot</h1>
+            <p>Asistente Inteligente para Descubrimiento de Necesidades Organizacionales</p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Portal de Innovación GTTD - Universidad Tecnológica de Pereira</p>
+        </div>
+        
+        <div class="auth-section">
+            <h3 style="margin-bottom: 15px;">👤 Autenticación de Usuario</h3>
+            <div class="auth-controls">
+                <select id="user-select" style="min-width: 250px;">
+                    <option value="1">María González (RRHH - Coordinadora)</option>
+                    <option value="2">Carlos Rodríguez (Finanzas - Analista)</option>
+                    <option value="3">Ana Martínez (Operaciones - Jefe)</option>
+                    <option value="4">Luis Gómez (GTTD - Coordinador)</option>
+                    <option value="demo">Usuario Demo (Testing)</option>
+                </select>
+                <button onclick="login()">🔐 Iniciar Sesión</button>
+                <button onclick="logout()">🚪 Cerrar Sesión</button>
+                <span id="connection-status" class="status offline">Desconectado</span>
+            </div>
+            <div id="user-info" class="user-info"></div>
+        </div>
+        
+        <div class="chat-container" id="chat-container">
+            <div class="message bot">
+                <strong>👋 ¡Bienvenido a InsightBot!</strong><br><br>
+                Soy tu asistente inteligente para identificar y analizar necesidades organizacionales en la Universidad Tecnológica de Pereira.<br><br>
+                <strong>Para comenzar:</strong><br>
+                1️⃣ Selecciona tu usuario arriba<br>
+                2️⃣ Haz clic en "Iniciar Sesión"<br>
+                3️⃣ Describe tu necesidad o problema<br><br>
+                <em>Puedes usar los botones de prueba para ver ejemplos de funcionamiento.</em>
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <div class="input-container">
+                <input type="text" id="message-input" placeholder="Inicia sesión para escribir..." disabled>
+                <button onclick="sendMessage()" id="send-btn" disabled>📤 Enviar</button>
+            </div>
+            <div class="test-buttons">
+                <button onclick="testScenario('problema-reportes')">🧪 Problema con Reportes</button>
+                <button onclick="testScenario('proceso-lento')">🧪 Proceso Lento</button>
+                <button onclick="testScenario('nueva-funcionalidad')">🧪 Nueva Funcionalidad</button>
+                <button onclick="testScenario('integracion-sistemas')">🧪 Integración de Sistemas</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración
+        const CONFIG = {
+            N8N_WEBHOOK: 'https://n8n.automacore.shop/webhook/insightbot/chat',
+            API_BASE: window.location.origin
+        };
+
+        // Sistema de autenticación mock
+        class MockAuth {
+            constructor() {
+                this.users = {
+                    '1': { id: '1', name: 'María González', area: 'RRHH', role: 'Coordinadora' },
+                    '2': { id: '2', name: 'Carlos Rodríguez', area: 'Finanzas', role: 'Analista' },
+                    '3': { id: '3', name: 'Ana Martínez', area: 'Operaciones', role: 'Jefe' },
+                    '4': { id: '4', name: 'Luis Gómez', area: 'GTTD', role: 'Coordinador' },
+                    'demo': { id: 'demo', name: 'Usuario Demo', area: 'GTTD', role: 'Tester' }
+                };
+            }
+            
+            login(userId) {
+                const user = this.users[userId];
+                if (user) {
+                    const token = `Bearer demo_token_${userId}`;
+                    localStorage.setItem('auth_token', token);
+                    localStorage.setItem('current_user', JSON.stringify(user));
+                    return { success: true, token, user };
+                }
+                return { success: false };
+            }
+            
+            getToken() {
+                return localStorage.getItem('auth_token');
+            }
+            
+            getCurrentUser() {
+                const stored = localStorage.getItem('current_user');
+                return stored ? JSON.parse(stored) : null;
+            }
+            
+            logout() {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('current_user');
+            }
+        }
+
+        const auth = new MockAuth();
+
+        // Funciones de autenticación
+        function login() {
+            const userId = document.getElementById('user-select').value;
+            const result = auth.login(userId);
+
+            if (result.success) {
+                updateUI(true, result.user);
+                addMessageToChat('bot', `✅ <strong>¡Hola ${result.user.name}!</strong><br>Sesión iniciada correctamente. Ya puedes escribir tu mensaje o usar los botones de prueba.`);
+                console.log('🔐 Sesión iniciada:', result);
+            }
+        }
+
+        function logout() {
+            auth.logout();
+            updateUI(false);
+            clearChat();
+            addMessageToChat('bot', '👋 <strong>Sesión cerrada.</strong><br>Selecciona un usuario e inicia sesión para continuar.');
+        }
+
+        function updateUI(loggedIn, user = null) {
+            const status = document.getElementById('connection-status');
+            const userInfo = document.getElementById('user-info');
+            const input = document.getElementById('message-input');
+            const sendBtn = document.getElementById('send-btn');
+
+            if (loggedIn && user) {
+                status.textContent = 'Conectado';
+                status.className = 'status online';
+                userInfo.innerHTML = `
+                    <strong>👤 ${user.name}</strong><br>
+                    📍 Área: ${user.area} | 💼 Rol: ${user.role}<br>
+                    🎫 Token: demo_token_${user.id}
+                `;
+                userInfo.style.display = 'block';
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.placeholder = 'Describe tu necesidad, problema o solicitud...';
+                input.focus();
+            } else {
+                status.textContent = 'Desconectado';
+                status.className = 'status offline';
+                userInfo.style.display = 'none';
+                input.disabled = true;
+                sendBtn.disabled = true;
+                input.placeholder = 'Inicia sesión para escribir...';
+            }
+        }
+
+        // Funciones de chat
+        async function sendMessage(message = null) {
+            const input = document.getElementById('message-input');
+            const messageText = message || input.value.trim();
+
+            if (!messageText) return;
+
+            const token = auth.getToken();
+            const user = auth.getCurrentUser();
+
+            if (!token || !user) {
+                alert('⚠️ Por favor inicia sesión primero');
+                return;
+            }
+
+            addMessageToChat('user', messageText);
+            addMessageToChat('bot', '⏳ <span class="loading"></span> Procesando tu solicitud...');
+
+            try {
+                console.log('📤 Enviando a n8n:', {
+                    message: messageText,
+                    user: { auth_token: token, user_id: user.id }
+                });
+
+                const response = await fetch(CONFIG.N8N_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: messageText,
+                        user: {
+                            auth_token: token,
+                            user_id: user.id
+                        },
+                        context: {
+                            timestamp: new Date().toISOString(),
+                            source: 'portal_vercel',
+                            frontend_url: window.location.href
+                        }
+                    })
+                });
+
+                removeLastProcessingMessage();
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('📥 Respuesta de n8n:', result);
+
+                displayBotResponse(result);
+
+            } catch (error) {
+                removeLastProcessingMessage();
+                console.error('❌ Error:', error);
+                addMessageToChat('bot', `❌ <strong>Error de conexión:</strong><br>${error.message}<br><br><em>Verifica que n8n esté funcionando y el webhook esté activo.</em>`);
+            }
+
+            if (!message) input.value = '';
+        }
+
+        function displayBotResponse(result) {
+            if (result.action === 'route') {
+                addMessageToChat('bot', `✅ <strong>Solicitud procesada correctamente</strong>`);
+
+                const sessionInfo = `
+                    <div class="response-info">
+                    <strong>📊 Información de Sesión:</strong><br>
+                    🆔 ID: ${result.session_data?.session_id || 'N/A'}<br>
+                    👤 Usuario: ${result.session_data?.user_profile?.name || 'N/A'}<br>
+                    🎯 Siguiente Agente: ${result.next_agent}<br>
+                    📈 Completitud: ${result.session_data?.completeness_score || 0}%<br>
+                    💭 Razón: ${result.reasoning}
+                    </div>
+                `;
+
+                addMessageToChat('bot', sessionInfo);
+
+                // Mensaje contextual según el agente
+                const agentMessages = {
+                    'discovery_agent': '🔍 <strong>Iniciando proceso de descubrimiento...</strong><br>Te haré algunas preguntas para entender mejor tu necesidad.',
+                    'summary_agent': '📋 <strong>Generando resumen...</strong><br>Tengo suficiente información para crear un resumen de tu solicitud.',
+                    'report_sender': '📧 <strong>Enviando reporte...</strong><br>Tu solicitud está siendo procesada y enviada a los responsables.'
+                };
+
+                const contextMessage = agentMessages[result.next_agent] || '⚙️ Procesando con el agente correspondiente...';
+                addMessageToChat('bot', contextMessage);
+
+            } else if (result.error) {
+                addMessageToChat('bot', `❌ <strong>Error:</strong> ${result.message}`);
+            } else {
+                addMessageToChat('bot', `📄 <strong>Respuesta:</strong><br><pre>${JSON.stringify(result, null, 2)}</pre>`);
+            }
+        }
+
+        function testScenario(scenario) {
+            const scenarios = {
+                'problema-reportes': 'Tengo problemas con la generación de reportes mensuales de RRHH. El proceso toma mucho tiempo y es muy manual.',
+                'proceso-lento': 'El proceso de aprobación de vacaciones es muy lento, toma más de una semana y requiere muchas firmas físicas.',
+                'nueva-funcionalidad': 'Necesitamos una funcionalidad para gestionar el inventario de equipos de cómputo de manera automática.',
+                'integracion-sistemas': 'Queremos integrar el sistema de nómina con el sistema académico para automatizar los pagos a docentes.'
+            };
+
+            const message = scenarios[scenario];
+            if (message) {
+                sendMessage(message);
+            }
+        }
+
+        function addMessageToChat(sender, message) {
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = message;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeLastProcessingMessage() {
+            const container = document.getElementById('chat-container');
+            const messages = container.querySelectorAll('.message.bot');
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage && (lastMessage.textContent.includes('⏳ Procesando') || lastMessage.innerHTML.includes('loading'))) {
+                lastMessage.remove();
+            }
+        }
+
+        function clearChat() {
+            const container = document.getElementById('chat-container');
+            container.innerHTML = '<div class="message bot"><strong>👋 ¡Bienvenido a InsightBot!</strong><br><br>Soy tu asistente inteligente para identificar y analizar necesidades organizacionales en la Universidad Tecnológica de Pereira.<br><br><strong>Para comenzar:</strong><br>1️⃣ Selecciona tu usuario arriba<br>2️⃣ Haz clic en "Iniciar Sesión"<br>3️⃣ Describe tu necesidad o problema<br><br><em>Puedes usar los botones de prueba para ver ejemplos de funcionamiento.</em></div>';
+        }
+
+        // Event listeners
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Verificar sesión al cargar
+        window.onload = function() {
+            const user = auth.getCurrentUser();
+            if (user) {
+                updateUI(true, user);
+                addMessageToChat('bot', `🔄 <strong>Sesión restaurada:</strong> ${user.name}<br>Puedes continuar escribiendo mensajes.`);
+            }
+
+            console.log('🚀 InsightBot Test Interface cargada');
+            console.log('🔧 Configuración:', CONFIG);
+            console.log('📝 Funciones disponibles: login(), logout(), testScenario()');
+        };
+    </script>
+</body>
+</html>
