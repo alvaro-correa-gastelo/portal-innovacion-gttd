@@ -183,6 +183,11 @@
             background: #dc3545;
             color: white;
         }
+
+        .testing {
+            background: #ffc107;
+            color: black;
+        }
         
         .loading {
             display: inline-block;
@@ -226,6 +231,19 @@
         </div>
         
         <div class="auth-section">
+            <h3 style="margin-bottom: 15px;">⚙️ Configuración de Conexión</h3>
+            <div class="auth-controls" style="margin-bottom: 20px;">
+                <label for="webhook-url" style="display: block; margin-bottom: 5px; font-weight: 600;">🔗 URL del Webhook n8n:</label>
+                <input type="url" id="webhook-url"
+                       value="https://n8n.automacore.shop/webhook/insightbot/chat"
+                       placeholder="https://tu-n8n.com/webhook/insightbot/chat"
+                       style="width: 100%; max-width: 500px; margin-bottom: 10px;">
+                <button onclick="testConnection()" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                    🔍 Test Conexión
+                </button>
+                <span id="webhook-status" class="status offline">No probado</span>
+            </div>
+
             <h3 style="margin-bottom: 15px;">👤 Autenticación de Usuario</h3>
             <div class="auth-controls">
                 <select id="user-select" style="min-width: 250px;">
@@ -271,9 +289,13 @@
     <script>
         // Configuración
         const CONFIG = {
-            N8N_WEBHOOK: 'https://n8n.automacore.shop/webhook/insightbot/chat',
             API_BASE: window.location.origin
         };
+
+        // Función para obtener URL del webhook
+        function getWebhookUrl() {
+            return document.getElementById('webhook-url').value.trim();
+        }
 
         // Sistema de autenticación mock
         class MockAuth {
@@ -314,6 +336,53 @@
         }
 
         const auth = new MockAuth();
+
+        // Función para probar conexión con webhook
+        async function testConnection() {
+            const webhookUrl = getWebhookUrl();
+            const webhookStatus = document.getElementById('webhook-status');
+
+            if (!webhookUrl) {
+                alert('⚠️ Por favor ingresa una URL de webhook válida');
+                return;
+            }
+
+            webhookStatus.textContent = 'Probando...';
+            webhookStatus.className = 'status';
+            webhookStatus.style.background = '#ffc107';
+            webhookStatus.style.color = 'black';
+
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "test_connection",
+                        user: {
+                            auth_token: "Bearer test_token",
+                            user_id: "test"
+                        },
+                        context: {
+                            timestamp: new Date().toISOString(),
+                            source: 'connection_test'
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    webhookStatus.textContent = 'Conectado ✅';
+                    webhookStatus.className = 'status online';
+                    addMessageToChat('bot', `✅ <strong>Conexión exitosa</strong><br>Webhook respondió con status ${response.status}<br>URL: ${webhookUrl}`);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+            } catch (error) {
+                webhookStatus.textContent = 'Error ❌';
+                webhookStatus.className = 'status offline';
+                addMessageToChat('bot', `❌ <strong>Error de conexión:</strong><br>${error.message}<br>URL: ${webhookUrl}<br><br><em>Verifica que la URL sea correcta y que n8n esté funcionando.</em>`);
+            }
+        }
 
         // Funciones de autenticación
         function login() {
@@ -367,8 +436,14 @@
         async function sendMessage(message = null) {
             const input = document.getElementById('message-input');
             const messageText = message || input.value.trim();
+            const webhookUrl = getWebhookUrl();
 
             if (!messageText) return;
+
+            if (!webhookUrl) {
+                alert('⚠️ Por favor configura la URL del webhook primero');
+                return;
+            }
 
             const token = auth.getToken();
             const user = auth.getCurrentUser();
@@ -384,10 +459,11 @@
             try {
                 console.log('📤 Enviando a n8n:', {
                     message: messageText,
-                    user: { auth_token: token, user_id: user.id }
+                    user: { auth_token: token, user_id: user.id },
+                    webhook_url: webhookUrl
                 });
 
-                const response = await fetch(CONFIG.N8N_WEBHOOK, {
+                const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -503,8 +579,24 @@
             }
         });
 
+        // Event listeners
+        document.getElementById('webhook-url').addEventListener('input', function() {
+            localStorage.setItem('webhook_url', this.value);
+            // Reset webhook status when URL changes
+            const webhookStatus = document.getElementById('webhook-status');
+            webhookStatus.textContent = 'No probado';
+            webhookStatus.className = 'status offline';
+        });
+
         // Verificar sesión al cargar
         window.onload = function() {
+            // Restaurar URL del webhook
+            const savedWebhookUrl = localStorage.getItem('webhook_url');
+            if (savedWebhookUrl) {
+                document.getElementById('webhook-url').value = savedWebhookUrl;
+            }
+
+            // Restaurar sesión de usuario
             const user = auth.getCurrentUser();
             if (user) {
                 updateUI(true, user);
@@ -513,7 +605,8 @@
 
             console.log('🚀 InsightBot Test Interface cargada');
             console.log('🔧 Configuración:', CONFIG);
-            console.log('📝 Funciones disponibles: login(), logout(), testScenario()');
+            console.log('📝 Funciones disponibles: login(), logout(), testScenario(), testConnection()');
+            console.log('🔗 Webhook URL:', getWebhookUrl());
         };
     </script>
 </body>
