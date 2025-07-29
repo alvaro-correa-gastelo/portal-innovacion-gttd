@@ -1,0 +1,395 @@
+{
+  "name": "InsightBot Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "insightbot/chat",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Webhook Chat Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "conversationId",
+              "value": "={{ $json.conversationId || $now.toString() }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "messageCount",
+              "value": "={{ $json.conversationHistory ? $json.conversationHistory.length : 0 }}"
+            },
+            {
+              "name": "currentPhase",
+              "value": "={{ $json.currentPhase || 'discovery' }}"
+            },
+            {
+              "name": "extractedData",
+              "value": "={{ JSON.stringify($json.extractedData || {}) }}"
+            }
+          ]
+        }
+      },
+      "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
+      "name": "Input Validator",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\"parts\": [{\"text\": \"Eres InsightBot, especialista en descubrimiento conversacional para solicitudes tecnológicas UTP.\\n\\nOBJETIVOS:\\n- Extraer: problema, objetivo, impacto, plataformas, stakeholders, urgencia\\n- Mantener conversación natural y empática\\n- Hacer UNA pregunta principal por respuesta\\n- Activar componentes ricos cuando sea apropiado\\n\\nFASES: discovery → clarification → summary → complete\\n\\nCONTEXTO ACTUAL:\\n- Mensaje: \" + $json.message + \"\\n- Fase: \" + $json.currentPhase + \"\\n- Mensajes intercambiados: \" + $json.messageCount + \"\\n- Datos extraídos: \" + $json.extractedData + \"\\n\\nResponde SOLO en formato JSON válido con esta estructura exacta:\\n{\\n  \\\"botMessage\\\": \\\"tu respuesta conversacional aquí\\\",\\n  \\\"extractedData\\\": {\\n    \\\"problem\\\": \\\"string o null\\\",\\n    \\\"objective\\\": \\\"string o null\\\",\\n    \\\"impact\\\": \\\"string o null\\\",\\n    \\\"platforms\\\": [\\\"array de strings\\\"],\\n    \\\"stakeholders\\\": [\\\"array de strings\\\"],\\n    \\\"urgency\\\": \\\"low|medium|high|critical\\\"\\n  },\\n  \\\"triggers\\\": {\\n    \\\"platformSelector\\\": boolean,\\n    \\\"summaryCard\\\": boolean,\\n    \\\"documentUpload\\\": boolean,\\n    \\\"satisfactionSurvey\\\": boolean\\n  },\\n  \\\"nextPhase\\\": \\\"discovery|clarification|summary|complete\\\",\\n  \\\"confidence\\\": number\\n}\\n\\nMensaje del usuario: \" + $json.message}]}] }}"
+            },
+            {
+              "name": "generationConfig",
+              "value": "={{ {\"temperature\": 0.7, \"maxOutputTokens\": 1000} }}"
+            }
+          ]
+        }
+      },
+      "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
+      "name": "Gemini AI Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "rawResponse",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "name": "cleanedResponse",
+              "value": "={{ $json.rawResponse.replace(/```json\\n?|```\\n?/g, '').trim() }}"
+            }
+          ]
+        }
+      },
+      "id": "d4e5f6g7-h8i9-0123-defg-456789012345",
+      "name": "Response Parser",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "object": [
+            {
+              "name": "aiResponse",
+              "value": "={{ JSON.parse($json.cleanedResponse) }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "problemScore",
+              "value": "={{ $json.aiResponse.extractedData.problem && $json.aiResponse.extractedData.problem.length > 10 ? 25 : 0 }}"
+            },
+            {
+              "name": "objectiveScore",
+              "value": "={{ $json.aiResponse.extractedData.objective && $json.aiResponse.extractedData.objective.length > 10 ? 25 : 0 }}"
+            },
+            {
+              "name": "impactScore",
+              "value": "={{ $json.aiResponse.extractedData.impact && $json.aiResponse.extractedData.impact.length > 10 ? 20 : 0 }}"
+            },
+            {
+              "name": "platformScore",
+              "value": "={{ $json.aiResponse.extractedData.platforms && $json.aiResponse.extractedData.platforms.length > 0 ? 15 : 0 }}"
+            },
+            {
+              "name": "stakeholderScore",
+              "value": "={{ $json.aiResponse.extractedData.stakeholders && $json.aiResponse.extractedData.stakeholders.length > 0 ? 10 : 0 }}"
+            },
+            {
+              "name": "urgencyScore",
+              "value": "={{ $json.aiResponse.extractedData.urgency && $json.aiResponse.extractedData.urgency !== 'low' ? 5 : 0 }}"
+            },
+            {
+              "name": "totalCompleteness",
+              "value": "={{ $json.problemScore + $json.objectiveScore + $json.impactScore + $json.platformScore + $json.stakeholderScore + $json.urgencyScore }}"
+            }
+          ]
+        }
+      },
+      "id": "e5f6g7h8-i9j0-1234-efgh-567890123456",
+      "name": "Completeness Calculator",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "boolean": [
+            {
+              "name": "summaryCard",
+              "value": "={{ $json.totalCompleteness >= 70 && $('Input Validator').item.json.messageCount >= 4 }}"
+            },
+            {
+              "name": "platformSelector",
+              "value": "={{ $json.aiResponse.extractedData.platforms && $json.aiResponse.extractedData.platforms.length > 0 }}"
+            },
+            {
+              "name": "documentUpload",
+              "value": "={{ $('Input Validator').item.json.message.toLowerCase().includes('documento') || $('Input Validator').item.json.message.toLowerCase().includes('archivo') }}"
+            },
+            {
+              "name": "satisfactionSurvey",
+              "value": "={{ $json.totalCompleteness >= 85 }}"
+            },
+            {
+              "name": "urgencyIndicator",
+              "value": "={{ $json.aiResponse.extractedData.urgency === 'high' || $json.aiResponse.extractedData.urgency === 'critical' }}"
+            }
+          ]
+        }
+      },
+      "id": "f6g7h8i9-j0k1-2345-fghi-678901234567",
+      "name": "Trigger Evaluator",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $('Input Validator').item.json.conversationId }}"
+            },
+            {
+              "fieldId": "user_message",
+              "fieldValue": "={{ $('Input Validator').item.json.message }}"
+            },
+            {
+              "fieldId": "bot_response",
+              "fieldValue": "={{ $('Completeness Calculator').item.json.aiResponse.botMessage }}"
+            },
+            {
+              "fieldId": "extracted_data",
+              "fieldValue": "={{ JSON.stringify($('Completeness Calculator').item.json.aiResponse.extractedData) }}"
+            },
+            {
+              "fieldId": "triggers",
+              "fieldValue": "={{ JSON.stringify({platformSelector: $json.platformSelector, summaryCard: $json.summaryCard, documentUpload: $json.documentUpload, satisfactionSurvey: $json.satisfactionSurvey, urgencyIndicator: $json.urgencyIndicator}) }}"
+            },
+            {
+              "fieldId": "phase",
+              "fieldValue": "={{ $('Completeness Calculator').item.json.aiResponse.nextPhase }}"
+            },
+            {
+              "fieldId": "confidence",
+              "fieldValue": "={{ $('Completeness Calculator').item.json.totalCompleteness }}"
+            },
+            {
+              "fieldId": "timestamp",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "g7h8i9j0-k1l2-3456-ghij-789012345678",
+      "name": "Save Conversation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "botMessage",
+              "value": "={{ $('Completeness Calculator').item.json.aiResponse.botMessage }}"
+            },
+            {
+              "name": "nextPhase",
+              "value": "={{ $('Completeness Calculator').item.json.aiResponse.nextPhase }}"
+            },
+            {
+              "name": "confidence",
+              "value": "={{ $('Completeness Calculator').item.json.totalCompleteness }}"
+            }
+          ],
+          "object": [
+            {
+              "name": "extractedData",
+              "value": "={{ $('Completeness Calculator').item.json.aiResponse.extractedData }}"
+            },
+            {
+              "name": "triggers",
+              "value": "={{ {platformSelector: $('Trigger Evaluator').item.json.platformSelector, summaryCard: $('Trigger Evaluator').item.json.summaryCard, documentUpload: $('Trigger Evaluator').item.json.documentUpload, satisfactionSurvey: $('Trigger Evaluator').item.json.satisfactionSurvey, urgencyIndicator: $('Trigger Evaluator').item.json.urgencyIndicator} }}"
+            }
+          ]
+        }
+      },
+      "id": "h8i9j0k1-l2m3-4567-hijk-890123456789",
+      "name": "Format Final Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Chat Input": {
+      "main": [
+        [
+          {
+            "node": "Input Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validator": {
+      "main": [
+        [
+          {
+            "node": "Gemini AI Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini AI Call": {
+      "main": [
+        [
+          {
+            "node": "Response Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Parser": {
+      "main": [
+        [
+          {
+            "node": "Completeness Calculator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completeness Calculator": {
+      "main": [
+        [
+          {
+            "node": "Trigger Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Save Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Conversation": {
+      "main": [
+        [
+          {
+            "node": "Format Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-07-28T23:15:44.000Z",
+      "updatedAt": "2025-07-28T23:15:44.000Z",
+      "id": "insightbot",
+      "name": "InsightBot"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-07-28T23:15:44.000Z",
+  "versionId": "1"
+}

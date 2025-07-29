@@ -1,0 +1,184 @@
+{
+  "name": "InsightBot AI Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "insightbot/chat",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-trigger-001",
+      "name": "Webhook Chat Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.conversationId || 'default' }}",
+        "contextWindowLength": 10
+      },
+      "id": "ai-memory-002",
+      "name": "AI Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryWindowBuffer",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "Eres InsightBot, especialista en descubrimiento conversacional para solicitudes tecnológicas UTP.\n\nOBJETIVOS:\n- Extraer: problema, objetivo, impacto, plataformas, stakeholders, urgencia\n- Mantener conversación natural y empática\n- Hacer UNA pregunta principal por respuesta\n- Activar componentes ricos cuando sea apropiado\n\nFASES: discovery → clarification → summary → complete\n\nCONTEXTO ACTUAL:\n- Mensaje: {{ $json.message }}\n- Fase: {{ $json.currentPhase || 'discovery' }}\n- Datos extraídos: {{ JSON.stringify($json.extractedData || {}) }}\n\nResponde SOLO en formato JSON válido con esta estructura:\n{\n  \"botMessage\": \"tu respuesta conversacional aquí\",\n  \"extractedData\": {\n    \"problem\": \"string o null\",\n    \"objective\": \"string o null\",\n    \"impact\": \"string o null\",\n    \"platforms\": [\"array de strings\"],\n    \"stakeholders\": [\"array de strings\"],\n    \"urgency\": \"low|medium|high|critical\"\n  },\n  \"triggers\": {\n    \"platformSelector\": boolean,\n    \"summaryCard\": boolean,\n    \"documentUpload\": boolean,\n    \"satisfactionSurvey\": boolean\n  },\n  \"nextPhase\": \"discovery|clarification|summary|complete\",\n  \"confidence\": number\n}",
+        "hasOutputParser": true,
+        "outputParser": "structuredOutputParser",
+        "jsonSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"botMessage\": {\"type\": \"string\"},\n    \"extractedData\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"problem\": {\"type\": \"string\"},\n        \"objective\": {\"type\": \"string\"},\n        \"impact\": {\"type\": \"string\"},\n        \"platforms\": {\"type\": \"array\"},\n        \"stakeholders\": {\"type\": \"array\"},\n        \"urgency\": {\"type\": \"string\"}\n      }\n    },\n    \"triggers\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"platformSelector\": {\"type\": \"boolean\"},\n        \"summaryCard\": {\"type\": \"boolean\"},\n        \"documentUpload\": {\"type\": \"boolean\"},\n        \"satisfactionSurvey\": {\"type\": \"boolean\"}\n      }\n    },\n    \"nextPhase\": {\"type\": \"string\"},\n    \"confidence\": {\"type\": \"number\"}\n  },\n  \"required\": [\"botMessage\", \"extractedData\", \"triggers\", \"nextPhase\", \"confidence\"]\n}",
+        "model": {
+          "model": "gemini-1.5-pro",
+          "options": {
+            "temperature": 0.7,
+            "maxOutputTokens": 1000
+          }
+        }
+      },
+      "id": "ai-agent-003",
+      "name": "InsightBot AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "name": "context_analyzer",
+        "description": "Analiza sentimiento, urgencia y entidades del mensaje del usuario",
+        "workflowId": "context-analyzer-workflow",
+        "specifyInputSchema": true,
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"message\": {\"type\": \"string\"},\n    \"conversation_history\": {\"type\": \"array\"}\n  },\n  \"required\": [\"message\"]\n}",
+        "specifyOutputSchema": true,
+        "outputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"sentiment\": {\"type\": \"string\"},\n    \"urgency_level\": {\"type\": \"string\"},\n    \"mentioned_systems\": {\"type\": \"array\"},\n    \"stakeholders\": {\"type\": \"array\"},\n    \"project_type\": {\"type\": \"string\"}\n  }\n}"
+      },
+      "id": "tool-context-004",
+      "name": "Context Analyzer Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1,
+      "position": [400, 500]
+    },
+    {
+      "parameters": {
+        "name": "data_extractor",
+        "description": "Extrae y estructura información específica de la conversación",
+        "workflowId": "data-extractor-workflow",
+        "specifyInputSchema": true,
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"message\": {\"type\": \"string\"},\n    \"previous_data\": {\"type\": \"object\"}\n  },\n  \"required\": [\"message\"]\n}",
+        "specifyOutputSchema": true,
+        "outputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"problem\": {\"type\": \"string\"},\n    \"objective\": {\"type\": \"string\"},\n    \"impact\": {\"type\": \"string\"},\n    \"platforms\": {\"type\": \"array\"},\n    \"stakeholders\": {\"type\": \"array\"},\n    \"urgency\": {\"type\": \"string\"},\n    \"completeness_percentage\": {\"type\": \"number\"}\n  }\n}"
+      },
+      "id": "tool-extractor-005",
+      "name": "Data Extractor Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1,
+      "position": [600, 500]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $('Webhook Chat Input').item.json.conversationId }}"
+            },
+            {
+              "fieldId": "user_message",
+              "fieldValue": "={{ $('Webhook Chat Input').item.json.message }}"
+            },
+            {
+              "fieldId": "bot_response",
+              "fieldValue": "={{ $json.output.botMessage }}"
+            },
+            {
+              "fieldId": "extracted_data",
+              "fieldValue": "={{ JSON.stringify($json.output.extractedData) }}"
+            },
+            {
+              "fieldId": "triggers",
+              "fieldValue": "={{ JSON.stringify($json.output.triggers) }}"
+            },
+            {
+              "fieldId": "phase",
+              "fieldValue": "={{ $json.output.nextPhase }}"
+            },
+            {
+              "fieldId": "confidence",
+              "fieldValue": "={{ $json.output.confidence }}"
+            },
+            {
+              "fieldId": "timestamp",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "supabase-save-006",
+      "name": "Save Conversation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Chat Input": {
+      "main": [
+        [
+          {
+            "node": "AI Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Memory": {
+      "main": [
+        [
+          {
+            "node": "InsightBot AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "InsightBot AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Save Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-07-28T23:19:40.000Z",
+      "updatedAt": "2025-07-28T23:19:40.000Z",
+      "id": "insightbot-ai-agent",
+      "name": "InsightBot AI Agent"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-07-28T23:19:40.000Z",
+  "versionId": "1"
+}

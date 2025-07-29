@@ -1,0 +1,203 @@
+{
+  "name": "Data Extractor Tool Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "data-extractor",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-extractor-001",
+      "name": "Webhook Data Extractor",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\"parts\": [{\"text\": \"Extrae información estructurada del siguiente mensaje:\\n\\nMensaje: \" + $json.message + \"\\n\\nDatos previos: \" + JSON.stringify($json.previous_data || {}) + \"\\n\\nExtrae y actualiza la siguiente información:\\n- problem: descripción clara del problema identificado\\n- objective: objetivo específico del proyecto\\n- impact: impacto esperado o beneficios\\n- platforms: sistemas/plataformas mencionadas (Canvas, PeopleSoft, Oracle, SAP, etc.)\\n- stakeholders: beneficiarios (Estudiantes, Profesores, Personal Administrativo, etc.)\\n- urgency: nivel de urgencia (low, medium, high, critical)\\n\\nCalcula también completeness_percentage basado en cuántos campos están completos (0-100).\\n\\nResponde SOLO en formato JSON válido con esta estructura:\\n{\\n  \\\"problem\\\": \\\"string o null\\\",\\n  \\\"objective\\\": \\\"string o null\\\",\\n  \\\"impact\\\": \\\"string o null\\\",\\n  \\\"platforms\\\": [\\\"array de strings\\\"],\\n  \\\"stakeholders\\\": [\\\"array de strings\\\"],\\n  \\\"urgency\\\": \\\"low|medium|high|critical\\\",\\n  \\\"completeness_percentage\\\": number\\n}\"}]}] }}"
+            },
+            {
+              "name": "generationConfig",
+              "value": "={{ {\"temperature\": 0.3, \"maxOutputTokens\": 800} }}"
+            }
+          ]
+        }
+      },
+      "id": "gemini-extractor-002",
+      "name": "Gemini Data Extractor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "rawResponse",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "name": "cleanedResponse",
+              "value": "={{ $json.rawResponse.replace(/```json\\n?|```\\n?/g, '').trim() }}"
+            }
+          ]
+        }
+      },
+      "id": "response-parser-003",
+      "name": "Response Parser",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "object": [
+            {
+              "name": "extractedData",
+              "value": "={{ JSON.parse($json.cleanedResponse) }}"
+            }
+          ]
+        }
+      },
+      "id": "json-parser-004",
+      "name": "JSON Parser",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "problem",
+              "value": "={{ $json.extractedData.problem }}"
+            },
+            {
+              "name": "objective",
+              "value": "={{ $json.extractedData.objective }}"
+            },
+            {
+              "name": "impact",
+              "value": "={{ $json.extractedData.impact }}"
+            },
+            {
+              "name": "urgency",
+              "value": "={{ $json.extractedData.urgency }}"
+            }
+          ],
+          "object": [
+            {
+              "name": "platforms",
+              "value": "={{ $json.extractedData.platforms }}"
+            },
+            {
+              "name": "stakeholders",
+              "value": "={{ $json.extractedData.stakeholders }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "completeness_percentage",
+              "value": "={{ $json.extractedData.completeness_percentage }}"
+            }
+          ]
+        }
+      },
+      "id": "format-output-005",
+      "name": "Format Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Data Extractor": {
+      "main": [
+        [
+          {
+            "node": "Gemini Data Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Data Extractor": {
+      "main": [
+        [
+          {
+            "node": "Response Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Parser": {
+      "main": [
+        [
+          {
+            "node": "JSON Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON Parser": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-07-28T23:20:50.000Z",
+      "updatedAt": "2025-07-28T23:20:50.000Z",
+      "id": "data-extractor-tool",
+      "name": "Data Extractor Tool"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-07-28T23:20:50.000Z",
+  "versionId": "1"
+}

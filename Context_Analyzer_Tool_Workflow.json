@@ -1,0 +1,85 @@
+{
+  "name": "Context Analyzer Tool Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "context-analyzer",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-context-001",
+      "name": "Webhook Context Analyzer",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "sentiment",
+              "value": "={{ $json.message.toLowerCase().includes('urgente') || $json.message.toLowerCase().includes('rápido') ? 'urgent' : $json.message.toLowerCase().includes('problema') || $json.message.toLowerCase().includes('error') ? 'frustrated' : 'neutral' }}"
+            },
+            {
+              "name": "urgency_level",
+              "value": "={{ $json.message.toLowerCase().includes('crítico') || $json.message.toLowerCase().includes('emergencia') ? 'critical' : $json.message.toLowerCase().includes('urgente') ? 'high' : $json.message.toLowerCase().includes('pronto') ? 'medium' : 'low' }}"
+            },
+            {
+              "name": "project_type",
+              "value": "={{ $json.message.toLowerCase().includes('sistema') || $json.message.toLowerCase().includes('aplicación') ? 'development' : $json.message.toLowerCase().includes('reporte') || $json.message.toLowerCase().includes('dashboard') ? 'analytics' : $json.message.toLowerCase().includes('integración') ? 'integration' : 'general' }}"
+            }
+          ],
+          "object": [
+            {
+              "name": "mentioned_systems",
+              "value": "={{ (() => { const systems = []; const msg = $json.message.toLowerCase(); if (msg.includes('canvas')) systems.push('Canvas'); if (msg.includes('peoplesoft')) systems.push('PeopleSoft'); if (msg.includes('oracle')) systems.push('Oracle'); if (msg.includes('sap')) systems.push('SAP'); if (msg.includes('banner')) systems.push('Banner'); if (msg.includes('moodle')) systems.push('Moodle'); return systems; })() }}"
+            },
+            {
+              "name": "stakeholders",
+              "value": "={{ (() => { const stakeholders = []; const msg = $json.message.toLowerCase(); if (msg.includes('estudiante')) stakeholders.push('Estudiantes'); if (msg.includes('profesor') || msg.includes('docente')) stakeholders.push('Profesores'); if (msg.includes('administrativo') || msg.includes('admin')) stakeholders.push('Personal Administrativo'); if (msg.includes('director') || msg.includes('decano')) stakeholders.push('Directivos'); if (msg.includes('padre') || msg.includes('familia')) stakeholders.push('Padres de Familia'); return stakeholders; })() }}"
+            }
+          ]
+        }
+      },
+      "id": "context-analysis-002",
+      "name": "Context Analysis",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [400, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Context Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Context Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-07-28T23:20:25.000Z",
+      "updatedAt": "2025-07-28T23:20:25.000Z",
+      "id": "context-analyzer-tool",
+      "name": "Context Analyzer Tool"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-07-28T23:20:25.000Z",
+  "versionId": "1"
+}

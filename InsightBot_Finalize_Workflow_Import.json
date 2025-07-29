@@ -1,0 +1,295 @@
+{
+  "name": "InsightBot Finalize Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "insightbot/finalize",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "z1y2x3w4-v5u6-7890-zyxw-vut123456789",
+      "name": "Webhook Finalize",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "conversationId",
+              "value": "={{ $json.conversationId }}"
+            },
+            {
+              "name": "confidence",
+              "value": "={{ $json.confidence }}"
+            }
+          ],
+          "object": [
+            {
+              "name": "extractedData",
+              "value": "={{ $json.extractedData }}"
+            }
+          ]
+        }
+      },
+      "id": "y2x3w4v5-u6t7-8901-yxwv-ut2345678901",
+      "name": "Input Processor",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\"parts\": [{\"text\": \"Genera un informe técnico profesional basado en los siguientes datos extraídos de la conversación:\\n\\n\" + JSON.stringify($json.extractedData, null, 2) + \"\\n\\nEl informe debe incluir:\\n\\n1. RESUMEN EJECUTIVO\\n- Descripción concisa del proyecto\\n- Objetivos principales\\n- Beneficiarios clave\\n\\n2. ANÁLISIS TÉCNICO\\n- Problema identificado\\n- Solución propuesta\\n- Plataformas/sistemas involucrados\\n- Impacto esperado\\n\\n3. RECOMENDACIONES\\n- Enfoque técnico sugerido\\n- Consideraciones de implementación\\n- Riesgos y mitigaciones\\n\\n4. ESTIMACIÓN DE RECURSOS\\n- Tiempo estimado de desarrollo\\n- Recursos humanos necesarios\\n- Tecnologías requeridas\\n\\n5. PRÓXIMOS PASOS\\n- Fases de implementación\\n- Hitos clave\\n- Criterios de éxito\\n\\nFormato: Documento estructurado y profesional en español.\"}]}] }}"
+            },
+            {
+              "name": "generationConfig",
+              "value": "={{ {\"temperature\": 0.3, \"maxOutputTokens\": 2000} }}"
+            }
+          ]
+        }
+      },
+      "id": "x3w4v5u6-t7s8-9012-xwvu-ts3456789012",
+      "name": "Generate Technical Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "technicalReport",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "name": "requestTitle",
+              "value": "={{ $('Input Processor').item.json.extractedData.objective || 'Nueva Solicitud Tecnológica' }}"
+            },
+            {
+              "name": "requestDescription",
+              "value": "={{ $('Input Processor').item.json.extractedData.problem || 'Solicitud de desarrollo tecnológico' }}"
+            },
+            {
+              "name": "priority",
+              "value": "={{ $('Input Processor').item.json.extractedData.urgency || 'medium' }}"
+            }
+          ]
+        }
+      },
+      "id": "w4v5u6t7-s8r9-0123-wvut-sr4567890123",
+      "name": "Process Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "requests",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $('Input Processor').item.json.conversationId }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.requestTitle }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $json.requestDescription }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "pending_assignment"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "={{ $json.priority }}"
+            },
+            {
+              "fieldId": "platforms",
+              "fieldValue": "={{ JSON.stringify($('Input Processor').item.json.extractedData.platforms || []) }}"
+            },
+            {
+              "fieldId": "stakeholders",
+              "fieldValue": "={{ JSON.stringify($('Input Processor').item.json.extractedData.stakeholders || []) }}"
+            },
+            {
+              "fieldId": "technical_report",
+              "fieldValue": "={{ $json.technicalReport }}"
+            },
+            {
+              "fieldId": "confidence_score",
+              "fieldValue": "={{ $('Input Processor').item.json.confidence }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "v5u6t7s8-r9q0-1234-vutr-qp5678901234",
+      "name": "Create Request Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "request_created"
+            },
+            {
+              "name": "requestId",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "message",
+              "value": "Solicitud creada exitosamente y enviada para asignación."
+            },
+            {
+              "name": "title",
+              "value": "={{ $('Process Report').item.json.requestTitle }}"
+            }
+          ],
+          "object": [
+            {
+              "name": "requestData",
+              "value": "={{ {id: $json.id, title: $('Process Report').item.json.requestTitle, status: 'pending_assignment', priority: $('Process Report').item.json.priority, created_at: $json.created_at} }}"
+            }
+          ]
+        }
+      },
+      "id": "u6t7s8r9-q0p1-2345-utsr-po6789012345",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Finalize": {
+      "main": [
+        [
+          {
+            "node": "Input Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Processor": {
+      "main": [
+        [
+          {
+            "node": "Generate Technical Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Technical Report": {
+      "main": [
+        [
+          {
+            "node": "Process Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Report": {
+      "main": [
+        [
+          {
+            "node": "Create Request Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Request Record": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-07-28T23:16:46.000Z",
+      "updatedAt": "2025-07-28T23:16:46.000Z",
+      "id": "insightbot-finalize",
+      "name": "InsightBot Finalize"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-07-28T23:16:46.000Z",
+  "versionId": "1"
+}
