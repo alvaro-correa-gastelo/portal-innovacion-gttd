@@ -463,6 +463,10 @@
                     webhook_url: webhookUrl
                 });
 
+                // Crear AbortController para timeout personalizado
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos
+
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -477,8 +481,11 @@
                             source: 'portal_vercel',
                             frontend_url: window.location.href
                         }
-                    })
+                    }),
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
 
                 removeLastProcessingMessage();
 
@@ -494,7 +501,15 @@
             } catch (error) {
                 removeLastProcessingMessage();
                 console.error('❌ Error:', error);
-                addMessageToChat('bot', `❌ <strong>Error de conexión:</strong><br>${error.message}<br><br><em>Verifica que n8n esté funcionando y el webhook esté activo.</em>`);
+
+                let errorMessage = '';
+                if (error.name === 'AbortError') {
+                    errorMessage = `⏱️ <strong>Timeout:</strong><br>La respuesta de n8n tardó más de 60 segundos.<br><br><em>El agente puede estar procesando una consulta compleja. Intenta de nuevo.</em>`;
+                } else {
+                    errorMessage = `❌ <strong>Error de conexión:</strong><br>${error.message}<br><br><em>Verifica que n8n esté funcionando y el webhook esté activo.</em>`;
+                }
+
+                addMessageToChat('bot', errorMessage);
             }
 
             if (!message) input.value = '';

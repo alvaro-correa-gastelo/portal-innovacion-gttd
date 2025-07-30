@@ -1,0 +1,164 @@
+{
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "enum": ["discovery_agent"]
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensaje conversacional del agente para el usuario"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "error", "processing"]
+    },
+    "session": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["discovery", "summary", "complete"]
+        },
+        "completeness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "next_agent": {
+          "type": "string",
+          "enum": ["discovery_agent", "summary_agent", "report_sender"]
+        },
+        "should_continue": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        }
+      },
+      "required": ["session_id", "stage", "completeness", "next_agent", "should_continue", "confidence"]
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "type": "object",
+          "properties": {
+            "percentage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "color": {
+              "type": "string",
+              "enum": ["danger", "warning", "success", "info"]
+            },
+            "status_message": {
+              "type": "string"
+            },
+            "show_bar": {
+              "type": "boolean"
+            },
+            "breakdown": {
+              "type": "object"
+            }
+          },
+          "required": ["percentage", "color", "status_message", "show_bar"]
+        },
+        "interaction": {
+          "type": "object",
+          "properties": {
+            "next_questions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "show_continue_button": {
+              "type": "boolean"
+            },
+            "show_restart_button": {
+              "type": "boolean"
+            },
+            "input_placeholder": {
+              "type": "string"
+            },
+            "conversation_context": {
+              "type": "object"
+            }
+          },
+          "required": ["next_questions", "show_continue_button", "show_restart_button", "input_placeholder"]
+        }
+      },
+      "required": ["progress", "interaction"]
+    },
+    "extracted_data": {
+      "type": "object",
+      "properties": {
+        "complete_info": {
+          "type": "object"
+        },
+        "completeness_breakdown": {
+          "type": "object"
+        },
+        "conversation_analysis": {
+          "type": "object"
+        },
+        "information_gaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["complete_info", "completeness_breakdown", "conversation_analysis", "information_gaps"]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "conversation_turn": {
+          "type": "number"
+        },
+        "processing_time": {
+          "type": "number"
+        },
+        "agent_version": {
+          "type": "string"
+        },
+        "reasoning": {
+          "type": "string"
+        }
+      },
+      "required": ["timestamp", "conversation_turn", "processing_time", "agent_version", "reasoning"]
+    },
+    "flow_control": {
+      "type": "object",
+      "properties": {
+        "next_action": {
+          "type": "string",
+          "enum": ["continue_discovery", "proceed_to_summary", "request_clarification", "end_conversation"]
+        },
+        "can_proceed_to_summary": {
+          "type": "boolean"
+        },
+        "requires_more_info": {
+          "type": "boolean"
+        },
+        "routing_decision": {
+          "type": "string",
+          "enum": ["discovery_agent", "summary_agent", "report_sender"]
+        }
+      },
+      "required": ["next_action", "can_proceed_to_summary", "requires_more_info", "routing_decision"]
+    }
+  },
+  "required": ["agent", "message", "status", "session", "ui", "extracted_data", "metadata", "flow_control"]
+}
