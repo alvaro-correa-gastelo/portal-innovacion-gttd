@@ -425,6 +425,34 @@ export function ChatInterface() {
     </Card>
   )
 
+  // Componente de Preguntas Guía (NO clickeables)
+  const QuestionGuide = ({ questions }: { questions: string[] }) => (
+    <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 mb-4 shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center">
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Para ayudarte mejor, puedes contarme sobre:
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-2">
+          {questions.map((question, index) => (
+            <div
+              key={index}
+              className="flex items-start space-x-2 text-sm text-blue-700 dark:text-blue-300"
+            >
+              <span className="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
+              <span>{question}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 text-xs text-blue-600 dark:text-blue-400 italic">
+          💬 Escribe tu respuesta en el chat de abajo
+        </div>
+      </CardContent>
+    </Card>
+  )
+
   // Componente de Progreso del Agente
   const ProgressDisplay = ({ progress }: { progress: any }) => (
     <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-4">
@@ -489,6 +517,8 @@ export function ChatInterface() {
             <div key={message.id}>
               {message.type === "options" && message.content === "platform-selector" ? (
                 <PlatformSelector />
+              ) : message.type === "options" && message.content === "agent-questions" ? (
+                <QuestionGuide questions={message.questions || []} />
               ) : message.type === "progress" ? (
                 <ProgressDisplay progress={message.content} />
               ) : (

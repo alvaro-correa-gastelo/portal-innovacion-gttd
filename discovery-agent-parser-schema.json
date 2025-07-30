@@ -3,17 +3,23 @@
   "properties": {
     "agent": {
       "type": "string",
-      "enum": ["discovery_agent"],
-      "description": "Identificador del agente"
+      "enum": ["discovery_agent"]
     },
     "message": {
-      "type": "string",
-      "description": "Mensaje conversacional empático para el usuario"
+      "type": "string"
     },
     "status": {
       "type": "string",
-      "enum": ["success", "error", "processing"],
-      "description": "Estado del procesamiento"
+      "enum": ["success", "error", "processing"]
+    },
+    "completeness_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "next_action": {
+      "type": "string",
+      "enum": ["continue_discovery", "proceed_to_summary"]
     },
     "session": {
       "type": "object",
