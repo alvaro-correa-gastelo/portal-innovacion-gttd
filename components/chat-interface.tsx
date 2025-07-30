@@ -13,6 +13,11 @@ export function ChatInterface() {
   const [showSummary, setShowSummary] = useState(false)
   const [rating, setRating] = useState(0)
   const [showOptions, setShowOptions] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [sessionId, setSessionId] = useState<string>("")
+
+  // Configuración del webhook - puedes cambiar esta URL
+  const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL || "https://n8n.gttd.utp.edu.co/webhook/insightbot"
 
   const suggestions = [
     {
@@ -58,9 +63,9 @@ export function ChatInterface() {
     { id: "otros", label: "Otros", description: "Otra plataforma" },
   ]
 
-  const handleSendMessage = (messageText?: string) => {
+  const handleSendMessage = async (messageText?: string) => {
     const text = messageText || inputValue
-    if (!text.trim()) return
+    if (!text.trim() || isLoading) return
 
     const newMessage = {
       id: Date.now(),
@@ -71,36 +76,175 @@ export function ChatInterface() {
 
     setMessages((prev) => [...prev, newMessage])
     setInputValue("")
+    setIsLoading(true)
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = {
-        id: Date.now() + 1,
-        type: "bot",
-        content: getBotResponse(text),
-        timestamp: new Date(),
+    // Agregar mensaje de "escribiendo..."
+    const typingMessage = {
+      id: Date.now() + 1,
+      type: "bot",
+      content: "⏳ Procesando tu solicitud...",
+      timestamp: new Date(),
+      isTyping: true
+    }
+    setMessages((prev) => [...prev, typingMessage])
+
+    try {
+      // Llamar al webhook de n8n
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: text,
+          user: {
+            auth_token: "demo_token_user_001", // Token por defecto
+            user_id: "user_001"
+          },
+          context: {
+            timestamp: new Date().toISOString(),
+            source: 'portal_vercel',
+            frontend_url: window.location.href
+          }
+        })
+      })
+
+      // Remover mensaje de "escribiendo..."
+      setMessages((prev) => prev.filter(msg => !msg.isTyping))
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`)
       }
-      setMessages((prev) => [...prev, botResponse])
 
-      // Show platform selector after certain keywords
-      if (text.toLowerCase().includes("plataforma") || text.toLowerCase().includes("sistema")) {
+      const result = await response.json()
+      console.log('📥 Respuesta de n8n:', result)
+
+      // Procesar la respuesta del webhook
+      displayBotResponse(result)
+
+    } catch (error) {
+      console.error('❌ Error:', error)
+
+      // Remover mensaje de "escribiendo..."
+      setMessages((prev) => prev.filter(msg => !msg.isTyping))
+
+      // Mostrar error al usuario
+      const errorMessage = {
+        id: Date.now() + 2,
+        type: "bot",
+        content: `❌ Error de conexión: ${error.message}. Por favor, verifica que el webhook esté funcionando.`,
+        timestamp: new Date(),
+        isError: true
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Función para procesar la respuesta del webhook
+  const displayBotResponse = (result: any) => {
+    if (Array.isArray(result) && result.length > 0) {
+      const agentResponse = result[0]
+
+      // Actualizar session ID si viene en la respuesta
+      if (agentResponse.session?.session_id) {
+        setSessionId(agentResponse.session.session_id)
+      }
+
+      // Mensaje principal del agente
+      const botMessage = {
+        id: Date.now() + 3,
+        type: "bot",
+        content: agentResponse.message || "Respuesta procesada correctamente",
+        timestamp: new Date(),
+        agentData: agentResponse
+      }
+      setMessages((prev) => [...prev, botMessage])
+
+      // Mostrar información de progreso si está disponible
+      if (agentResponse.ui?.progress) {
+        const progressMessage = {
+          id: Date.now() + 4,
+          type: "progress",
+          content: agentResponse.ui.progress,
+          timestamp: new Date()
+        }
+        setMessages((prev) => [...prev, progressMessage])
+      }
+
+      // Mostrar opciones de interacción si están disponibles
+      if (agentResponse.ui?.interaction?.next_questions?.length > 0) {
         setTimeout(() => {
           setShowOptions(true)
           const optionsMessage = {
-            id: Date.now() + 2,
+            id: Date.now() + 5,
             type: "options",
-            content: "platform-selector",
+            content: "agent-questions",
             timestamp: new Date(),
+            questions: agentResponse.ui.interaction.next_questions
           }
           setMessages((prev) => [...prev, optionsMessage])
-        }, 1500)
+        }, 1000)
       }
 
-      // Show summary after a few exchanges
-      if (messages.length > 4) {
+      // Mostrar resumen si la completitud es alta
+      if (agentResponse.session?.completeness >= 75) {
         setTimeout(() => setShowSummary(true), 2000)
       }
-    }, 1000)
+
+    } else if (result.action === 'route') {
+      // Formato de respuesta del Session Manager
+      const sessionInfo = `✅ Solicitud procesada correctamente
+
+📊 Información de Sesión:
+🆔 ID: ${result.session_data?.session_id || 'N/A'}
+🎯 Siguiente Agente: ${result.next_agent}
+💭 Razón: ${result.reasoning}`
+
+      const botMessage = {
+        id: Date.now() + 3,
+        type: "bot",
+        content: sessionInfo,
+        timestamp: new Date()
+      }
+      setMessages((prev) => [...prev, botMessage])
+
+      // Mensaje contextual según el agente
+      const agentMessages = {
+        'discovery_agent': '🔍 Iniciando proceso de descubrimiento... Te haré algunas preguntas para entender mejor tu necesidad.',
+        'summary_agent': '📋 Generando resumen... Tengo suficiente información para crear un resumen de tu solicitud.',
+        'report_sender': '📧 Enviando reporte... Tu solicitud está siendo procesada y enviada a los responsables.'
+      }
+
+      const contextMessage = agentMessages[result.next_agent] || '⚙️ Procesando con el agente correspondiente...'
+      const contextBotMessage = {
+        id: Date.now() + 4,
+        type: "bot",
+        content: contextMessage,
+        timestamp: new Date()
+      }
+      setMessages((prev) => [...prev, contextBotMessage])
+
+    } else if (result.error) {
+      const errorMessage = {
+        id: Date.now() + 3,
+        type: "bot",
+        content: `❌ Error: ${result.message}`,
+        timestamp: new Date(),
+        isError: true
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } else {
+      // Respuesta genérica
+      const genericMessage = {
+        id: Date.now() + 3,
+        type: "bot",
+        content: `📄 Respuesta recibida: ${JSON.stringify(result, null, 2)}`,
+        timestamp: new Date()
+      }
+      setMessages((prev) => [...prev, genericMessage])
+    }
   }
 
   const getBotResponse = (userMessage: string) => {
@@ -288,6 +432,35 @@ export function ChatInterface() {
     </Card>
   )
 
+  // Componente de Progreso del Agente
+  const ProgressDisplay = ({ progress }: { progress: any }) => (
+    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-4">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">Progreso de Análisis</h4>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{progress.percentage}%</span>
+          </div>
+
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className={`h-2 rounded-full transition-all duration-300 ${
+                progress.color === 'danger' ? 'bg-red-500' :
+                progress.color === 'warning' ? 'bg-yellow-500' :
+                progress.color === 'success' ? 'bg-green-500' : 'bg-blue-500'
+              }`}
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+
+          {progress.status_message && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">{progress.status_message}</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+
   // RF-S05: Componente Encuesta de Satisfacción
   const SatisfactionSurvey = () => (
     <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -323,6 +496,8 @@ export function ChatInterface() {
             <div key={message.id}>
               {message.type === "options" && message.content === "platform-selector" ? (
                 <PlatformSelector />
+              ) : message.type === "progress" ? (
+                <ProgressDisplay progress={message.content} />
               ) : (
                 <div className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                   <div className={`flex max-w-[80%] ${message.type === "user" ? "flex-row-reverse" : "flex-row"}`}>
@@ -330,23 +505,27 @@ export function ChatInterface() {
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         message.type === "user"
                           ? "bg-utp-blue dark:bg-utp-red ml-3"
+                          : message.isError
+                          ? "bg-red-100 dark:bg-red-900 mr-3"
                           : "bg-gray-100 dark:bg-gray-800 mr-3"
                       }`}
                     >
                       {message.type === "user" ? (
                         <User className="w-4 h-4 text-white" />
                       ) : (
-                        <Bot className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <Bot className={`w-4 h-4 ${message.isError ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`} />
                       )}
                     </div>
                     <div
                       className={`rounded-lg p-4 ${
                         message.type === "user"
                           ? "bg-utp-blue dark:bg-utp-red text-white"
+                          : message.isError
+                          ? "bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100 border border-red-200 dark:border-red-800"
                           : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm whitespace-pre-line">{message.content}</p>
                       <p className="text-xs opacity-70 mt-2">{message.timestamp.toLocaleTimeString()}</p>
                     </div>
                   </div>
@@ -377,9 +556,13 @@ export function ChatInterface() {
           <Button
             onClick={() => handleSendMessage()}
             className="bg-utp-blue hover:bg-utp-blue-dark dark:bg-utp-red dark:hover:bg-utp-red-dark text-white"
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isLoading}
           >
-            <Send className="w-4 h-4" />
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
