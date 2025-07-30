@@ -1,0 +1,156 @@
+{
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["route", "error", "complete"]
+    },
+    "next_agent": {
+      "type": "string",
+      "enum": ["discovery_agent", "summary_agent", "report_sender"]
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "Explicación de por qué se eligió este agente"
+    },
+    "session_data": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string"
+        },
+        "user_profile": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "department": {
+              "type": "string"
+            },
+            "auth_token": {
+              "type": "string"
+            },
+            "user_id": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "role", "department", "auth_token", "user_id"]
+        },
+        "conversation_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["user", "assistant"]
+              },
+              "content": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string"
+              }
+            },
+            "required": ["role", "content", "timestamp"]
+          }
+        },
+        "extracted_info": {
+          "type": "object",
+          "properties": {
+            "problem_type": {
+              "type": "string"
+            },
+            "urgency": {
+              "type": "string"
+            },
+            "department": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "impact": {
+              "type": "string"
+            },
+            "stakeholders": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "completeness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["initial", "discovery", "summary", "complete"]
+        }
+      },
+      "required": ["session_id", "user_profile", "conversation_history", "extracted_info", "completeness_score", "stage"]
+    },
+    "agent_input": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "user": {
+          "type": "object",
+          "properties": {
+            "auth_token": {
+              "type": "string"
+            },
+            "user_id": {
+              "type": "string"
+            }
+          },
+          "required": ["auth_token", "user_id"]
+        },
+        "session": {
+          "type": "object",
+          "properties": {
+            "session_id": {
+              "type": "string"
+            },
+            "conversation_history": {
+              "type": "array"
+            },
+            "extracted_info": {
+              "type": "object"
+            },
+            "completeness_score": {
+              "type": "number"
+            }
+          },
+          "required": ["session_id", "conversation_history", "extracted_info", "completeness_score"]
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "timestamp": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "frontend_url": {
+              "type": "string"
+            }
+          },
+          "required": ["timestamp", "source"]
+        }
+      },
+      "required": ["message", "user", "session", "context"]
+    }
+  },
+  "required": ["action", "next_agent", "reasoning", "session_data", "agent_input"]
+}

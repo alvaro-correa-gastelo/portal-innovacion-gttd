@@ -3,15 +3,17 @@
   "properties": {
     "agent": {
       "type": "string",
-      "enum": ["discovery_agent"]
+      "enum": ["discovery_agent"],
+      "description": "Identificador del agente"
     },
     "message": {
       "type": "string",
-      "description": "Mensaje conversacional del agente para el usuario"
+      "description": "Mensaje conversacional empático para el usuario"
     },
     "status": {
       "type": "string",
-      "enum": ["success", "error", "processing"]
+      "enum": ["success", "error", "processing"],
+      "description": "Estado del procesamiento"
     },
     "session": {
       "type": "object",
