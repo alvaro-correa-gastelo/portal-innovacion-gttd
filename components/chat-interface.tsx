@@ -16,7 +16,7 @@ export function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string>("")
 
-  // Configuración del webhook - puedes cambiar esta URL
+  // Configuración del webhook - URL por defecto
   const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL || "https://n8n.gttd.utp.edu.co/webhook/insightbot"
 
   const suggestions = [
