@@ -15,7 +15,7 @@ export function ChatInterface() {
   const [showOptions, setShowOptions] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string>("")
-  const [webhookUrl, setWebhookUrl] = useState("https://n8n.gttd.utp.edu.co/webhook/insightbot")
+  const [webhookUrl, setWebhookUrl] = useState("https://n8n.automacore.shop/webhook-test/insightbot-test/chat")
   const [showConfig, setShowConfig] = useState(false)
   const [userToken, setUserToken] = useState<string>("")
   const [userInfo, setUserInfo] = useState<any>(null)
