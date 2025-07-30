@@ -463,25 +463,39 @@
                     webhook_url: webhookUrl
                 });
 
-                console.log('⏱️ Iniciando request sin timeout...');
+                console.log('⏱️ Iniciando request con timeout de 120 segundos...');
                 const startTime = Date.now();
 
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: messageText,
-                        user: {
-                            auth_token: token,
-                            user_id: user.id
+                // Crear AbortController para timeout personalizado
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => {
+                    console.log('⏰ Timeout alcanzado, abortando request...');
+                    controller.abort();
+                }, 120000); // 120 segundos = 2 minutos
+
+                try {
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         },
-                        context: {
-                            timestamp: new Date().toISOString(),
-                            source: 'portal_vercel',
-                            frontend_url: window.location.href
-                        }
-                    })
-                });
+                        body: JSON.stringify({
+                            message: messageText,
+                            user: {
+                                auth_token: token,
+                                user_id: user.id
+                            },
+                            context: {
+                                timestamp: new Date().toISOString(),
+                                source: 'portal_vercel',
+                                frontend_url: window.location.href
+                            }
+                        }),
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId); // Limpiar timeout si la respuesta llega a tiempo
 
                 const endTime = Date.now();
                 console.log(`⏱️ Request completado en ${endTime - startTime}ms`);
@@ -506,6 +520,19 @@
                 try {
                     result = JSON.parse(responseText);
                     console.log('📥 Parsed JSON:', result);
+
+                    // Si la respuesta es un array, tomar el primer elemento
+                    if (Array.isArray(result) && result.length > 0) {
+                        console.log('📦 Respuesta es array, tomando primer elemento');
+                        result = result[0];
+                    }
+
+                    // Si el resultado tiene un campo "output", extraerlo
+                    if (result.output && typeof result.output === 'object') {
+                        console.log('📦 Extrayendo contenido de "output"');
+                        result = result.output;
+                    }
+
                 } catch (parseError) {
                     console.error('❌ JSON Parse Error:', parseError);
                     console.error('❌ Raw text that failed to parse:', responseText);
@@ -517,12 +544,46 @@
 
                 displayBotResponse(result);
 
+                } catch (fetchError) {
+                    clearTimeout(timeoutId); // Limpiar timeout en caso de error
+                    throw fetchError; // Re-lanzar el error para el catch principal
+                }
+
             } catch (error) {
                 removeLastProcessingMessage();
                 console.error('❌ Error completo:', error);
                 console.error('❌ Error stack:', error.stack);
 
-                const errorMessage = `❌ <strong>Error de conexión:</strong><br>${error.message}<br><br><em>Verifica que n8n esté funcionando y el webhook esté activo.</em><br><br><strong>Debug info:</strong><br><pre>${error.stack}</pre>`;
+                let errorMessage;
+
+                if (error.name === 'AbortError') {
+                    // Error de timeout
+                    errorMessage = `⏰ <strong>Timeout de 2 minutos alcanzado</strong><br><br>
+                        El procesamiento está tomando más tiempo del esperado. Esto puede deberse a:<br>
+                        • El workflow de AI está procesando información compleja<br>
+                        • Cloudflare está limitando la conexión<br>
+                        • El servidor n8n está sobrecargado<br><br>
+                        <em>💡 Sugerencia: Intenta de nuevo en unos momentos o contacta al administrador.</em>`;
+                } else if (error.message.includes('CORS')) {
+                    // Error de CORS
+                    errorMessage = `🚫 <strong>Error de CORS:</strong><br><br>
+                        ${error.message}<br><br>
+                        <em>💡 Esto indica que el workflow no está activo o no está configurado correctamente.</em>`;
+                } else if (error.message.includes('Failed to fetch')) {
+                    // Error de red general
+                    errorMessage = `🌐 <strong>Error de conexión:</strong><br><br>
+                        No se pudo conectar con el servidor n8n.<br><br>
+                        Posibles causas:<br>
+                        • El workflow no está activo<br>
+                        • Problema de red o Cloudflare<br>
+                        • El servidor n8n no está disponible<br><br>
+                        <em>💡 Verifica que el workflow esté activo en n8n.</em>`;
+                } else {
+                    // Error genérico
+                    errorMessage = `❌ <strong>Error inesperado:</strong><br><br>
+                        ${error.message}<br><br>
+                        <strong>Debug info:</strong><br><pre>${error.stack}</pre>`;
+                }
 
                 addMessageToChat('bot', errorMessage);
             }
@@ -531,7 +592,50 @@
         }
 
         function displayBotResponse(result) {
-            if (result.action === 'route') {
+            console.log('📥 Procesando respuesta del bot:', result);
+            console.log('📥 Tipo de result:', typeof result);
+            console.log('📥 result.agent:', result.agent);
+            console.log('📥 result.status:', result.status);
+            console.log('📥 result.message:', result.message);
+
+            // Manejar respuesta del nuevo formato del workflow
+            if (result.agent && result.message && (result.status === 'success' || result.status === 'Success' || result.status === 'error')) {
+                console.log('✅ Procesando respuesta del agente:', result.agent, 'con status:', result.status);
+                // Mostrar el mensaje principal del agente
+                if (result.message) {
+                    addMessageToChat('bot', result.message);
+                }
+
+                // Mostrar información de progreso si está disponible
+                if (result.ui && result.ui.progress) {
+                    const progress = result.ui.progress;
+                    const progressInfo = `
+                        <div class="response-info">
+                        <strong>📊 Progreso de la Conversación:</strong><br>
+                        📈 Completitud: ${progress.percentage}%<br>
+                        📝 Estado: ${progress.status_message}<br>
+                        🎯 Agente: ${result.agent}<br>
+                        ${result.session?.session_id ? `🆔 Sesión: ${result.session.session_id}<br>` : ''}
+                        ${result.metadata?.reasoning ? `💭 Análisis: ${result.metadata.reasoning}` : ''}
+                        </div>
+                    `;
+                    addMessageToChat('bot', progressInfo);
+                }
+
+                // Mostrar preguntas de seguimiento si las hay
+                if (result.extracted_data && result.extracted_data.information_gaps && result.extracted_data.information_gaps.length > 0) {
+                    const questions = result.extracted_data.information_gaps;
+                    const questionsHtml = `
+                        <div style="background: #f8f9fa; border-left: 4px solid #0055A4; padding: 15px; margin: 10px 0; border-radius: 5px;">
+                        <strong>🤔 Preguntas para continuar:</strong><br>
+                        ${questions.map(q => `• ${q}`).join('<br>')}
+                        </div>
+                    `;
+                    addMessageToChat('bot', questionsHtml);
+                }
+
+            } else if (result.action === 'route') {
+                // Mantener compatibilidad con formato anterior
                 addMessageToChat('bot', `✅ <strong>Solicitud procesada correctamente</strong>`);
 
                 const sessionInfo = `
@@ -557,10 +661,28 @@
                 const contextMessage = agentMessages[result.next_agent] || '⚙️ Procesando con el agente correspondiente...';
                 addMessageToChat('bot', contextMessage);
 
-            } else if (result.error) {
-                addMessageToChat('bot', `❌ <strong>Error:</strong> ${result.message}`);
+            } else if (result.error && !result.agent) {
+                addMessageToChat('bot', `❌ <strong>Error:</strong> ${result.message || 'Error desconocido'}`);
+            } else if (result.agent && result.message && !result.status) {
+                // Caso donde viene agent y message pero status puede ser diferente
+                console.log('📥 Procesando respuesta con agent y message (status no estándar)');
+                addMessageToChat('bot', result.message);
+
+                // Mostrar información básica si está disponible
+                if (result.session && result.session.completeness !== undefined) {
+                    const basicInfo = `
+                        <div class="response-info">
+                        <strong>📊 Progreso:</strong> ${result.session.completeness}%<br>
+                        <strong>🎯 Agente:</strong> ${result.agent}<br>
+                        ${result.session.session_id ? `<strong>🆔 Sesión:</strong> ${result.session.session_id}` : ''}
+                        </div>
+                    `;
+                    addMessageToChat('bot', basicInfo);
+                }
             } else {
-                addMessageToChat('bot', `📄 <strong>Respuesta:</strong><br><pre>${JSON.stringify(result, null, 2)}</pre>`);
+                // Fallback: mostrar JSON para debug
+                console.warn('⚠️ Formato de respuesta no reconocido:', result);
+                addMessageToChat('bot', `📄 <strong>Respuesta no reconocida:</strong><br><pre>${JSON.stringify(result, null, 2)}</pre>`);
             }
         }
 
