@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Send, CheckCircle, Edit3, Star, Bot, User, Sparkles, Lightbulb, Zap, Target, FileText } from "lucide-react"
+import { Send, CheckCircle, Edit3, Star, Bot, User, Sparkles, MessageCircle, FileText } from "lucide-react"
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<any[]>([])
@@ -15,46 +15,21 @@ export function ChatInterface() {
   const [showOptions, setShowOptions] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string>("")
+  const [webhookUrl, setWebhookUrl] = useState("https://n8n.gttd.utp.edu.co/webhook/insightbot")
+  const [showConfig, setShowConfig] = useState(false)
+  const [userToken, setUserToken] = useState<string>("")
+  const [userInfo, setUserInfo] = useState<any>(null)
 
-  // Configuración del webhook - URL por defecto
-  const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL || "https://n8n.gttd.utp.edu.co/webhook/insightbot"
+  // Obtener información del usuario autenticado
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token')
+    const user = localStorage.getItem('current_user')
 
-  const suggestions = [
-    {
-      icon: Lightbulb,
-      title: "Sistema de Gestión",
-      description: "Necesito un sistema para gestionar inventarios de TI",
-      prompt:
-        "Necesito un sistema para gestionar inventarios de equipos de TI con seguimiento en tiempo real y alertas automáticas",
-      color: "text-utp-blue dark:text-utp-red",
-      bgColor: "bg-utp-blue/10 hover:bg-utp-blue/20 dark:bg-utp-red/10 dark:hover:bg-utp-red/20",
-    },
-    {
-      icon: Zap,
-      title: "Automatización",
-      description: "Quiero automatizar procesos manuales",
-      prompt: "Quiero automatizar el proceso de generación de reportes mensuales y notificaciones automáticas",
-      color: "text-yellow-500",
-      bgColor: "bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30",
-    },
-    {
-      icon: Target,
-      title: "Dashboard BI",
-      description: "Necesito un dashboard para análisis de datos",
-      prompt:
-        "Requiero un dashboard de Business Intelligence para análisis de datos en tiempo real con gráficos interactivos",
-      color: "text-green-500",
-      bgColor: "bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30",
-    },
-    {
-      icon: Sparkles,
-      title: "Integración",
-      description: "Integrar sistemas existentes",
-      prompt: "Necesito integrar nuestros sistemas actuales con una nueva plataforma de gestión centralizada",
-      color: "text-purple-500",
-      bgColor: "bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30",
-    },
-  ]
+    if (token && user) {
+      setUserToken(token)
+      setUserInfo(JSON.parse(user))
+    }
+  }, [])
 
   const platformOptions = [
     { id: "canvas", label: "Canvas", description: "Sistema de gestión académica" },
@@ -90,7 +65,7 @@ export function ChatInterface() {
 
     try {
       // Llamar al webhook de n8n
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,13 +73,15 @@ export function ChatInterface() {
         body: JSON.stringify({
           message: text,
           user: {
-            auth_token: "demo_token_user_001", // Token por defecto
-            user_id: "user_001"
+            auth_token: userToken || "demo_token_user_001",
+            user_id: userInfo?.user_id || "user_001"
           },
           context: {
             timestamp: new Date().toISOString(),
             source: 'portal_vercel',
-            frontend_url: window.location.href
+            frontend_url: window.location.href,
+            user_name: userInfo?.name || "Usuario",
+            user_area: userInfo?.area || "GTTD"
           }
         })
       })
@@ -128,11 +105,11 @@ export function ChatInterface() {
       // Remover mensaje de "escribiendo..."
       setMessages((prev) => prev.filter(msg => !msg.isTyping))
 
-      // Mostrar error al usuario
+      // Mostrar error al usuario de manera amigable
       const errorMessage = {
         id: Date.now() + 2,
         type: "bot",
-        content: `❌ Error de conexión: ${error.message}. Por favor, verifica que el webhook esté funcionando.`,
+        content: `Lo siento, tuve un problema técnico al procesar tu mensaje. 😔\n\nPor favor, intenta nuevamente en unos momentos. Si el problema persiste, puedes contactar al equipo de soporte técnico.\n\n**Detalles técnicos:** ${error.message}`,
         timestamp: new Date(),
         isError: true
       }
@@ -247,25 +224,30 @@ export function ChatInterface() {
     }
   }
 
-  const getBotResponse = (userMessage: string) => {
-    const lowerMessage = userMessage.toLowerCase()
-
-    if (lowerMessage.includes("inventario") || lowerMessage.includes("gestión")) {
-      return "Perfecto! Un sistema de gestión de inventarios puede ayudarte mucho. ¿Qué tipo de inventario necesitas gestionar? ¿Equipos de TI, materiales de oficina, o algo específico? También, ¿necesitas funciones como códigos QR, alertas de stock bajo, o reportes automáticos?"
-    } else if (lowerMessage.includes("automatizar") || lowerMessage.includes("automático")) {
-      return "Excelente idea automatizar procesos! ¿Qué proceso específico quieres automatizar? ¿Reportes, notificaciones, aprobaciones, o algo más? Cuéntame más sobre el flujo actual para poder sugerir la mejor solución."
-    } else if (lowerMessage.includes("dashboard") || lowerMessage.includes("análisis")) {
-      return "Un dashboard de BI puede transformar cómo visualizas tus datos. ¿Qué tipo de datos necesitas analizar? ¿Ventas, rendimiento, usuarios, o métricas específicas? ¿Necesitas gráficos en tiempo real o reportes periódicos?"
-    } else if (lowerMessage.includes("integrar") || lowerMessage.includes("integración")) {
-      return "Las integraciones son clave para la eficiencia. ¿Qué sistemas necesitas conectar? ¿Tienes APIs disponibles o necesitamos crear conectores personalizados? Cuéntame más sobre tu arquitectura actual."
-    } else {
-      return "Entiendo tu solicitud. Permíteme recopilar algunos detalles adicionales para generar el mejor resumen posible. ¿Podrías contarme más sobre el contexto y los objetivos específicos de tu proyecto?"
+  // Función para agregar mensaje de bienvenida inicial
+  const addWelcomeMessage = () => {
+    if (messages.length === 0) {
+      const welcomeMessage = {
+        id: Date.now(),
+        type: "bot",
+        content: userInfo
+          ? `¡Hola ${userInfo.name}! 😊 Soy tu asistente de innovación tecnológica. Estoy aquí para ayudarte a estructurar tu solicitud de la mejor manera posible.\n\n¿En qué proyecto o necesidad tecnológica puedo ayudarte hoy?`
+          : `¡Hola! 😊 Soy tu asistente de innovación tecnológica. Estoy aquí para ayudarte a crear una solicitud clara y completa.\n\n¿Cuéntame sobre tu proyecto o necesidad tecnológica?`,
+        timestamp: new Date(),
+        isWelcome: true
+      }
+      setMessages([welcomeMessage])
     }
   }
 
-  const handleSuggestionClick = (suggestion: any) => {
-    handleSendMessage(suggestion.prompt)
-  }
+  // Agregar mensaje de bienvenida cuando se carga el componente
+  useEffect(() => {
+    if (userInfo && messages.length === 0) {
+      addWelcomeMessage()
+    }
+  }, [userInfo])
+
+
 
   const handleOptionSelect = (option: any) => {
     const optionMessage = {
@@ -291,46 +273,57 @@ export function ChatInterface() {
 
   const EmptyState = () => (
     <div className="flex-1 flex items-center justify-center p-6">
-      <div className="text-center max-w-4xl">
+      <div className="text-center max-w-3xl">
         <div className="w-20 h-20 bg-utp-blue/20 dark:bg-utp-red/20 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Sparkles className="w-10 h-10 text-utp-blue dark:text-utp-red" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Mi Espacio de Innovación</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">
-          Bienvenido al sistema inteligente de solicitudes. Describe tu proyecto o necesidad tecnológica y te ayudaré a
-          estructurar tu solicitud de manera profesional.
-        </p>
-
-        {/* Suggestion Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {suggestions.map((suggestion, index) => (
-            <Card
-              key={index}
-              className={`cursor-pointer transition-all duration-200 border-gray-200 dark:border-gray-700 ${suggestion.bgColor} hover:shadow-md`}
-              onClick={() => handleSuggestionClick(suggestion)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className={`p-3 rounded-lg bg-white dark:bg-gray-800 shadow-sm`}>
-                    <suggestion.icon className={`h-6 w-6 ${suggestion.color}`} />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">{suggestion.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{suggestion.description}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <MessageCircle className="w-10 h-10 text-utp-blue dark:text-utp-red" />
         </div>
 
-        {/* Quick Tips */}
-        <div className="text-left space-y-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-          <p className="font-medium text-gray-900 dark:text-gray-100 mb-2">💡 Consejos para una mejor solicitud:</p>
-          <p>• Describe claramente el problema que quieres resolver</p>
-          <p>• Menciona el impacto esperado en tu área de trabajo</p>
-          <p>• Incluye cualquier restricción técnica o de tiempo</p>
-          <p>• Especifica si tienes preferencias de tecnología</p>
+        {userInfo ? (
+          <>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              ¡Hola, {userInfo.name}! 👋
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              Estoy aquí para ayudarte a crear tu solicitud de innovación tecnológica.
+              Cuéntame sobre tu proyecto o necesidad y juntos la estructuraremos de la mejor manera.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Portal de Innovación UTP
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              Bienvenido al asistente inteligente para solicitudes de innovación.
+              Describe tu proyecto y te ayudaré a estructurar tu solicitud.
+            </p>
+          </>
+        )}
+
+        {/* Consejos mejorados */}
+        <div className="text-left space-y-3 text-sm text-gray-600 dark:text-gray-400 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-lg p-6 border border-blue-100 dark:border-gray-600">
+          <div className="flex items-center mb-3">
+            <Sparkles className="w-5 h-5 text-utp-blue dark:text-utp-red mr-2" />
+            <p className="font-medium text-gray-900 dark:text-gray-100">Consejos para una solicitud exitosa:</p>
+          </div>
+          <div className="space-y-2 ml-7">
+            <p>• <strong>Contexto:</strong> Explica la situación actual y el problema a resolver</p>
+            <p>• <strong>Objetivo:</strong> Define claramente qué quieres lograr</p>
+            <p>• <strong>Impacto:</strong> Menciona cómo beneficiará a tu área o la universidad</p>
+            <p>• <strong>Detalles técnicos:</strong> Incluye sistemas involucrados o preferencias tecnológicas</p>
+            <p>• <strong>Urgencia:</strong> Indica si hay fechas límite o prioridades especiales</p>
+          </div>
+        </div>
+
+        {/* Botón para iniciar conversación */}
+        <div className="mt-8">
+          <Button
+            onClick={addWelcomeMessage}
+            className="bg-utp-blue hover:bg-utp-blue-dark dark:bg-utp-red dark:hover:bg-utp-red-dark text-white px-8 py-3 text-lg"
+          >
+            <MessageCircle className="w-5 h-5 mr-2" />
+            Iniciar Nueva Solicitud
+          </Button>
         </div>
       </div>
     </div>
@@ -549,7 +542,10 @@ export function ChatInterface() {
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Describe tu solicitud o proyecto tecnológico..."
+            placeholder={userInfo
+              ? `Hola ${userInfo.name}, cuéntame sobre tu proyecto o necesidad...`
+              : "Describe tu proyecto o necesidad tecnológica..."
+            }
             className="flex-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-utp-blue dark:focus:border-utp-red"
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
           />
@@ -566,7 +562,7 @@ export function ChatInterface() {
           </Button>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-          Presiona Enter para enviar • El bot está diseñado para ayudarte a estructurar tu solicitud
+          Presiona Enter para enviar • {userInfo ? `Conectado como ${userInfo.name} (${userInfo.area})` : 'Sistema de asistencia inteligente activo'}
         </p>
       </div>
     </div>
