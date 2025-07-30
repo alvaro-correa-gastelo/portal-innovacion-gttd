@@ -7,12 +7,92 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Send, CheckCircle, Edit3, Star, Bot, User, Sparkles, MessageCircle, FileText } from "lucide-react"
 
+// Componente para renderizar contenido de mensaje con formato rico
+const MessageContent = ({ content, agentData }: { content: string, agentData?: any }) => {
+  // Si el contenido parece ser JSON, intentar parsearlo y mostrarlo de forma estructurada
+  if (content.startsWith('{') || content.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(content)
+
+      // Si es la respuesta del agente con estructura conocida
+      if (parsed.status && parsed.agent && parsed.response) {
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                {parsed.agent} - {parsed.status}
+              </span>
+            </div>
+
+            {parsed.response.message && (
+              <p className="text-sm whitespace-pre-line">{parsed.response.message}</p>
+            )}
+
+            {parsed.response.progress && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-200">{parsed.response.progress}</p>
+              </div>
+            )}
+
+            {parsed.response.next_questions && parsed.response.next_questions.length > 0 && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">Preguntas sugeridas:</p>
+                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                  {parsed.response.next_questions.map((question: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-yellow-500 mt-1">•</span>
+                      <span>{question}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {parsed.session_id && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Sesión: {parsed.session_id}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      // Para otros tipos de JSON, mostrar de forma estructurada
+      return (
+        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+          <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+            {JSON.stringify(parsed, null, 2)}
+          </pre>
+        </div>
+      )
+    } catch (e) {
+      // Si no se puede parsear como JSON, mostrar como texto normal
+    }
+  }
+
+  // Contenido de texto normal
+  return <p className="text-sm whitespace-pre-line">{content}</p>
+}
+
 export function ChatInterface() {
   const [messages, setMessages] = useState<any[]>([])
   const [inputValue, setInputValue] = useState("")
   const [showSummary, setShowSummary] = useState(false)
   const [rating, setRating] = useState(0)
   const [showOptions, setShowOptions] = useState(false)
+
+  // Mensaje de bienvenida inicial
+  useEffect(() => {
+    const welcomeMessage = {
+      id: Date.now(),
+      type: "bot",
+      content: "¡Hola! 👋 Soy InsightBot, tu asistente de innovación de UTP GTTD.\n\n¿En qué proyecto o necesidad tecnológica puedo ayudarte hoy?\n\nPuedes contarme sobre cualquier problema, idea o requerimiento que tengas.",
+      timestamp: new Date(),
+      isError: false
+    }
+    setMessages([welcomeMessage])
+  }, [])
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string>("")
   const [webhookUrl, setWebhookUrl] = useState("https://n8n.automacore.shop/webhook-test/insightbot-test/chat") // Webhook Automacore para pruebas
@@ -121,7 +201,62 @@ export function ChatInterface() {
 
   // Función para procesar la respuesta del webhook
   const displayBotResponse = (result: any) => {
-    if (Array.isArray(result) && result.length > 0) {
+    console.log('🔍 Procesando respuesta:', result)
+
+    // Caso 1: Respuesta directa del agente (formato nuevo)
+    if (result.status && result.agent && result.response) {
+      // Actualizar session ID si viene en la respuesta
+      if (result.session_id) {
+        setSessionId(result.session_id)
+      }
+
+      // Procesar la respuesta del agente
+      const agentResponse = result.response
+
+      // Mensaje principal del agente
+      const botMessage = {
+        id: Date.now() + 3,
+        type: "bot",
+        content: agentResponse.message || agentResponse.content || "Respuesta procesada correctamente",
+        timestamp: new Date(),
+        agentData: result
+      }
+      setMessages((prev) => [...prev, botMessage])
+
+      // Mostrar información de progreso si está disponible
+      if (agentResponse.progress) {
+        const progressMessage = {
+          id: Date.now() + 4,
+          type: "progress",
+          content: agentResponse.progress,
+          timestamp: new Date()
+        }
+        setMessages((prev) => [...prev, progressMessage])
+      }
+
+      // Mostrar opciones de interacción si están disponibles
+      if (agentResponse.next_questions && agentResponse.next_questions.length > 0) {
+        setTimeout(() => {
+          setShowOptions(true)
+          const optionsMessage = {
+            id: Date.now() + 5,
+            type: "options",
+            content: "agent-questions",
+            timestamp: new Date(),
+            questions: agentResponse.next_questions
+          }
+          setMessages((prev) => [...prev, optionsMessage])
+        }, 1000)
+      }
+
+      // Mostrar resumen si la completitud es alta
+      if (result.completeness >= 75) {
+        setTimeout(() => setShowSummary(true), 2000)
+      }
+
+    }
+    // Caso 2: Array de respuestas (formato anterior)
+    else if (Array.isArray(result) && result.length > 0) {
       const agentResponse = result[0]
 
       // Actualizar session ID si viene en la respuesta
@@ -170,8 +305,9 @@ export function ChatInterface() {
         setTimeout(() => setShowSummary(true), 2000)
       }
 
-    } else if (result.action === 'route') {
-      // Formato de respuesta del Session Manager
+    }
+    // Caso 3: Respuesta de routing del Session Manager
+    else if (result.action === 'route') {
       const sessionInfo = `✅ Solicitud procesada correctamente
 
 📊 Información de Sesión:
@@ -203,21 +339,41 @@ export function ChatInterface() {
       }
       setMessages((prev) => [...prev, contextBotMessage])
 
-    } else if (result.error) {
+    }
+    // Caso 4: Error
+    else if (result.error) {
       const errorMessage = {
         id: Date.now() + 3,
         type: "bot",
-        content: `❌ Error: ${result.message}`,
+        content: `❌ Error: ${result.message || result.error}`,
         timestamp: new Date(),
         isError: true
       }
       setMessages((prev) => [...prev, errorMessage])
-    } else {
-      // Respuesta genérica
+    }
+    // Caso 5: Respuesta genérica (fallback)
+    else {
+      console.warn('⚠️ Formato de respuesta no reconocido:', result)
+
+      // Intentar extraer mensaje de diferentes campos posibles
+      let content = "Respuesta procesada correctamente"
+
+      if (result.message) {
+        content = result.message
+      } else if (result.content) {
+        content = result.content
+      } else if (result.text) {
+        content = result.text
+      } else if (typeof result === 'string') {
+        content = result
+      } else {
+        content = `📄 Respuesta recibida: ${JSON.stringify(result, null, 2)}`
+      }
+
       const genericMessage = {
         id: Date.now() + 3,
         type: "bot",
-        content: `📄 Respuesta recibida: ${JSON.stringify(result, null, 2)}`,
+        content: content,
         timestamp: new Date()
       }
       setMessages((prev) => [...prev, genericMessage])
@@ -548,7 +704,7 @@ export function ChatInterface() {
                           : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-line">{message.content}</p>
+                      <MessageContent content={message.content} agentData={message.agentData} />
                       <p className="text-xs opacity-70 mt-2">{message.timestamp.toLocaleTimeString()}</p>
                     </div>
                   </div>
