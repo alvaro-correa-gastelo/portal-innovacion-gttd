@@ -9,59 +9,127 @@ import { Send, CheckCircle, Edit3, Star, Bot, User, Sparkles, MessageCircle, Fil
 
 // Componente para renderizar contenido de mensaje con formato rico
 const MessageContent = ({ content, agentData }: { content: string, agentData?: any }) => {
+  // Si tenemos agentData (datos procesados), usarlo directamente
+  if (agentData) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 mb-3">
+          <div className={`w-2 h-2 rounded-full ${
+            agentData.status === 'success' ? 'bg-green-500' :
+            agentData.status === 'error' ? 'bg-red-500' : 'bg-blue-500'
+          }`}></div>
+          <span className={`text-sm font-medium ${
+            agentData.status === 'success' ? 'text-green-700 dark:text-green-300' :
+            agentData.status === 'error' ? 'text-red-700 dark:text-red-300' :
+            'text-blue-700 dark:text-blue-300'
+          }`}>
+            {agentData.agent} - {agentData.status}
+          </span>
+        </div>
+
+        {/* Mensaje principal */}
+        <p className="text-sm whitespace-pre-line">{content}</p>
+
+        {/* Información de progreso */}
+        {agentData.ui?.progress && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                Progreso: {agentData.ui.progress.percentage}%
+              </span>
+            </div>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              {agentData.ui.progress.status_message}
+            </p>
+          </div>
+        )}
+
+        {/* Información de sesión */}
+        {agentData.session && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="font-medium text-gray-600 dark:text-gray-400">Etapa:</span>
+                <span className="ml-1 text-gray-800 dark:text-gray-200">{agentData.session.stage}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600 dark:text-gray-400">Completitud:</span>
+                <span className="ml-1 text-gray-800 dark:text-gray-200">{agentData.session.completeness}%</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600 dark:text-gray-400">Siguiente:</span>
+                <span className="ml-1 text-gray-800 dark:text-gray-200">{agentData.session.next_agent}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-600 dark:text-gray-400">Confianza:</span>
+                <span className="ml-1 text-gray-800 dark:text-gray-200">{agentData.session.confidence}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Datos extraídos */}
+        {agentData.extracted_data?.complete_info && (
+          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+            <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+              📋 Información Recolectada
+            </h4>
+            <div className="space-y-1 text-xs">
+              {agentData.extracted_data.complete_info.urgency && (
+                <div>
+                  <span className="font-medium text-green-700 dark:text-green-300">Urgencia:</span>
+                  <span className="ml-1 text-green-600 dark:text-green-400">
+                    {agentData.extracted_data.complete_info.urgency}
+                  </span>
+                </div>
+              )}
+              {agentData.extracted_data.complete_info.department && (
+                <div>
+                  <span className="font-medium text-green-700 dark:text-green-300">Departamento:</span>
+                  <span className="ml-1 text-green-600 dark:text-green-400">
+                    {agentData.extracted_data.complete_info.department}
+                  </span>
+                </div>
+              )}
+              {agentData.extracted_data.complete_info.problem_type && (
+                <div>
+                  <span className="font-medium text-green-700 dark:text-green-300">Tipo de problema:</span>
+                  <span className="ml-1 text-green-600 dark:text-green-400">
+                    {agentData.extracted_data.complete_info.problem_type}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ID de sesión */}
+        {agentData.session?.session_id && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-mono">
+            Sesión: {agentData.session.session_id}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Si el contenido parece ser JSON, intentar parsearlo y mostrarlo de forma estructurada
   if (content.startsWith('{') || content.startsWith('[')) {
     try {
       const parsed = JSON.parse(content)
 
-      // Si es la respuesta del agente con estructura conocida
-      if (parsed.status && parsed.agent && parsed.response) {
-        return (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                {parsed.agent} - {parsed.status}
-              </span>
-            </div>
-
-            {parsed.response.message && (
-              <p className="text-sm whitespace-pre-line">{parsed.response.message}</p>
-            )}
-
-            {parsed.response.progress && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-200">{parsed.response.progress}</p>
-              </div>
-            )}
-
-            {parsed.response.next_questions && parsed.response.next_questions.length > 0 && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">Preguntas sugeridas:</p>
-                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                  {parsed.response.next_questions.map((question: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-yellow-500 mt-1">•</span>
-                      <span>{question}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {parsed.session_id && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Sesión: {parsed.session_id}
-              </div>
-            )}
-          </div>
-        )
+      // Si es un array con respuesta del agente
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].agent) {
+        const agentResponse = parsed[0]
+        return <MessageContent content={agentResponse.message} agentData={agentResponse} />
       }
 
-      // Para otros tipos de JSON, mostrar de forma estructurada
+      // Para otros tipos de JSON, mostrar de forma estructurada pero más limpia
       return (
-        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-          <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Respuesta estructurada:</div>
+          <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap overflow-x-auto">
             {JSON.stringify(parsed, null, 2)}
           </pre>
         </div>
