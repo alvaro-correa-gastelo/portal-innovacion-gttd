@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
 
-// DB config (keep aligned with other routes)
+// Configuración de la base de datos (Neon)
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'insightbot_db',
-  password: process.env.DB_PASSWORD || 'password',
-  port: parseInt(process.env.DB_PORT || '5432'),
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 })
 
 // GET /api/requests/[id]/timeline
