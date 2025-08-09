@@ -223,7 +223,8 @@ export function ChatInterface({ onRequestCreated }: { onRequestCreated?: (id: st
     setIsLoading(true);
 
     try {
-      const WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://n8n.automacore.shop/webhook-test/insightbot-test/chat"
+      // Siempre llamamos al proxy del backend para evitar CORS en Vercel
+      const WEBHOOK_URL = "/api/n8n/chat"
       const normalizedEventType: ChatEventType = (payload?.event?.type as ChatEventType) || 'N8N_VALIDATION'
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
