@@ -56,11 +56,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         {/* Tarjeta Principal de Login */}
         <Card className="shadow-xl border-0 bg-white">
           <CardHeader className="text-center pb-6 pt-8">
-            {/* Logo UTP GTTD */}
+            {/* Logo UTP oficial */}
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 bg-utp-blue rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-2xl">UTP</span>
-              </div>
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Utplogonuevo.svg/2560px-Utplogonuevo.svg.png"
+                alt="Universidad Tecnológica del Perú"
+                className="h-12 w-auto object-contain"
+                loading="eager"
+              />
             </div>
 
             {/* Título y Subtítulo */}

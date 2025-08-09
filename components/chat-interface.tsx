@@ -167,18 +167,9 @@ export function ChatInterface({ onRequestCreated }: { onRequestCreated?: (id: st
       setUserToken(token)
       setUserInfo(JSON.parse(user))
     } else {
-      // CORRECCIÓN: Usar mock data si no hay usuario logueado
-      console.warn("No se encontró información de autenticación. Usando datos de prueba para MVP.");
-      const mockUser = {
-        user_id: "u-qa-prof-01",
-        name: "Ana Torres (Prueba)",
-        role: "Profesor",
-        department: "Académico"
-      };
-      const mockToken = "mock-auth-token-for-testing";
-      
-      setUserToken(mockToken);
-      setUserInfo(mockUser);
+      // Sin datos de autenticación: no usar mocks en producción
+      // Dejamos userInfo y userToken en null para no mostrar nombres de prueba
+      console.info("Auth no encontrada; continuando en modo invitado.")
     }
     setIsReady(true); // El chat siempre está listo (con datos reales o de prueba)
   }, [])
@@ -238,8 +229,8 @@ export function ChatInterface({ onRequestCreated }: { onRequestCreated?: (id: st
           source: 'applicant_portal',
           debug: { sent_at: new Date().toISOString(), event_in_body: normalizedEventType },
           user: {
-            auth_token: userToken,
-            user_id: userInfo.user_id
+            auth_token: userToken || undefined,
+            user_id: userInfo?.user_id || undefined
           }
         })
       })
