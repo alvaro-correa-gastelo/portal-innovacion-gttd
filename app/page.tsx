@@ -45,6 +45,16 @@ export default function PortalInnovacion() {
     setUserRole(role)
     setIsAuthenticated(true)
 
+    // Persistir sesión básica para que el chat pueda leer user/token
+    try {
+      const localName = email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      const user = { user_id: email, email, name: localName, role }
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('auth_token', 'utp-portal-local-session')
+        window.localStorage.setItem('current_user', JSON.stringify(user))
+      }
+    } catch {}
+
     // Redirigir según el rol
     switch (role) {
       case "solicitante":
@@ -66,6 +76,12 @@ export default function PortalInnovacion() {
     setUserRole("")
     setUserEmail("")
     setCurrentView("chat")
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('auth_token')
+        window.localStorage.removeItem('current_user')
+      }
+    } catch {}
   }
 
   const handleOpenTracking = (request: any) => {
