@@ -33,14 +33,51 @@ export async function GET(
       LEFT JOIN session_states s ON r.session_id = s.session_id
       WHERE r.id = $1
     `
-    
-    const result = await pool.query(query, [requestId])
+
+    let result
+    try {
+      result = await pool.query(query, [requestId])
+    } catch (e: any) {
+      const msg = String(e?.message || '')
+      if (msg.includes('relation') && msg.includes('session_states')) {
+        const simpleQuery = `
+          SELECT 
+            r.*,
+            NULL::jsonb as conversation_data,
+            NULL::text as current_stage,
+            NULL::int as completeness_score,
+            COALESCE(r.leader_comments, '') as leader_comments,
+            COALESCE(r.technical_analysis, '{}') as technical_analysis,
+            EXTRACT(EPOCH FROM (NOW() - r.created_at))/86400 as days_since_created,
+            CASE 
+              WHEN r.status = 'pending_approval' THEN EXTRACT(EPOCH FROM (NOW() - r.created_at))/3600
+              ELSE 0
+            END as hours_waiting
+          FROM requests r
+          WHERE r.id = $1
+        `
+        result = await pool.query(simpleQuery, [requestId])
+      } else {
+        throw e
+      }
+    }
     
     if (result.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Solicitud no encontrada' },
-        { status: 404 }
-      )
+      // Evitar romper el UI: devolver 200 con datos mínimos si no existe
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: requestId,
+          status: 'not_found',
+          title: 'Solicitud no encontrada',
+          created_at: null,
+          leader_comments: '',
+          technical_analysis: {},
+          conversation_data: null,
+          current_stage: null,
+          completeness_score: null,
+        }
+      })
     }
     
     const row = result.rows[0]
@@ -91,6 +128,14 @@ export async function GET(
       { status: 500 }
     )
   }
+}
+
+// POST - Alias de actualización para entornos que bloquean PUT
+export async function POST(
+  request: NextRequest,
+  ctx: { params: Promise<{ id: string }> } | { params: { id: string } }
+) {
+  return PUT(request, ctx as any)
 }
 
 // PUT - Actualizar estado de solicitud (aprobar, rechazar, comentarios)

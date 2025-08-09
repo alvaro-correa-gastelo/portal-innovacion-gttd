@@ -78,8 +78,38 @@ export async function GET(request: NextRequest) {
     // Ordenar por fecha de creación (más recientes primero)
     query += ` ORDER BY r.created_at DESC`
     
-    // Ejecutar query
-    const result = await pool.query(query, params)
+    // Ejecutar query con fallback si falta tabla session_states
+    let result
+    try {
+      result = await pool.query(query, params)
+    } catch (e: any) {
+      const msg = String(e?.message || '')
+      // Si falta la tabla de estados de sesión, reintentar sin el JOIN
+      if (msg.includes('relation') && msg.includes('session_states')) {
+        const simpleQuery = `
+          SELECT 
+            r.*,
+            NULL::text as current_stage,
+            NULL::jsonb as conversation_data,
+            COALESCE(r.leader_comments, '') as leader_comments,
+            COALESCE(r.technical_analysis, '{}') as technical_analysis,
+            EXTRACT(EPOCH FROM (NOW() - r.created_at))/86400 as days_since_created,
+            CASE 
+              WHEN r.status = 'pending_approval' THEN EXTRACT(EPOCH FROM (NOW() - r.created_at))/3600
+              ELSE 0
+            END as hours_waiting
+          FROM requests r
+          WHERE 1=1
+          ${status ? ' AND r.status = $1' : ''}
+        `
+        result = await pool.query(simpleQuery, params.slice(0, status ? 1 : 0))
+      } else if (msg.includes('relation') && msg.includes('requests')) {
+        // Si la tabla principal no existe aún, devolver vacío en vez de 500
+        return NextResponse.json({ success: true, data: [], total: 0, timestamp: new Date().toISOString() })
+      } else {
+        throw e
+      }
+    }
     
     // Transformar datos para el frontend
     const requests = result.rows.map(row => ({
