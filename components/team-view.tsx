@@ -118,35 +118,35 @@ export default function TeamView() {
   }
 
   const getWorkloadBgColor = (workload: number) => {
-    if (workload >= 85) return "bg-red-100 border-red-200"
-    if (workload >= 70) return "bg-yellow-100 border-yellow-200"
-    return "bg-green-100 border-green-200"
+    if (workload >= 85) return "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
+    if (workload >= 70) return "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800"
+    return "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Muy Ocupada":
-        return "bg-red-500"
+        return "bg-red-500 dark:bg-red-600"
       case "Ocupado":
       case "Ocupada":
-        return "bg-yellow-500"
+        return "bg-yellow-500 dark:bg-yellow-600"
       case "Disponible":
-        return "bg-green-500"
+        return "bg-green-500 dark:bg-green-600"
       default:
-        return "bg-gray-500"
+        return "bg-gray-500 dark:bg-gray-600"
     }
   }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "Alta":
-        return "bg-red-100 text-red-700 border-red-200"
+        return "bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
       case "Media":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200"
+        return "bg-yellow-100 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800"
       case "Baja":
-        return "bg-green-100 text-green-700 border-green-200"
+        return "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200"
+        return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
     }
   }
 
@@ -251,7 +251,7 @@ export default function TeamView() {
                 <div className="flex items-center space-x-4">
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={`/placeholder.svg?height=48&width=48`} />
-                    <AvatarFallback className="bg-utp-blue text-white font-medium">{member.avatar}</AvatarFallback>
+                    <AvatarFallback className="bg-utp-blue dark:bg-utp-red text-white font-medium">{member.avatar}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <CardTitle className="text-lg">{member.name}</CardTitle>
@@ -267,10 +267,10 @@ export default function TeamView() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Carga de Trabajo Actual</span>
-                    <span className={`text-sm font-bold ${getWorkloadColor(member.workload)}`}>{member.workload}%</span>
+                    <span className={`text-sm font-bold ${getWorkloadColor(member.workload)} dark:opacity-90`}>{member.workload}%</span>
                   </div>
                   <Progress value={member.workload} className="h-2" />
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>{member.jiraTickets} tickets activos</span>
                     <span>{member.completedThisWeek} completados esta semana</span>
                   </div>
@@ -283,13 +283,13 @@ export default function TeamView() {
                     {member.currentTasks.slice(0, 3).map((task, index) => (
                       <div
                         key={index}
-                        className="flex items-start space-x-2 p-2 bg-white dark:bg-gray-800 rounded-lg border"
+                        className="flex items-start space-x-2 p-2 bg-white dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
                       >
                         <span className="text-sm">{getTypeIcon(task.type)}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{task.title}</p>
+                          <p className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">{task.title}</p>
                           <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="outline" className="text-xs py-0 px-1">
+                            <Badge variant="outline" className="text-xs py-0 px-1 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400">
                               {task.type}
                             </Badge>
                             <Badge variant="outline" className={`text-xs py-0 px-1 ${getPriorityColor(task.priority)}`}>
@@ -307,15 +307,15 @@ export default function TeamView() {
         </div>
 
         {/* Nota informativa */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
           <CardContent className="p-4">
             <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
-                <span className="text-blue-600 text-sm">ℹ️</span>
+              <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mt-0.5">
+                <span className="text-blue-600 dark:text-blue-400 text-sm">ℹ️</span>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-blue-900">Datos en Tiempo Real</h4>
-                <p className="text-sm text-blue-700 mt-1">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Datos en Tiempo Real</h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
                   Esta información se sincroniza automáticamente cada 15 minutos desde Jira y Monday.com. Los datos
                   incluyen tickets asignados, progreso de épicas y métricas de productividad.
                 </p>

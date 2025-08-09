@@ -86,6 +86,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="nombre.apellido@utp.edu.pe"
                     className="pl-10 h-12 border-gray-200 focus:border-utp-blue focus:ring-utp-blue"
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -105,6 +106,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Ingresa tu contraseña"
                     className="pl-10 pr-10 h-12 border-gray-200 focus:border-utp-blue focus:ring-utp-blue"
+                    autoComplete="current-password"
                     required
                   />
                   <button

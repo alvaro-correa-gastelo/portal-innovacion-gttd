@@ -53,6 +53,12 @@ export function RequestDetailModal({ isOpen, onClose, request, userRole }: Reque
   const [comment, setComment] = useState("")
   const [chatMessage, setChatMessage] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showApprovalModal, setShowApprovalModal] = useState(false)
+  const [showRejectionModal, setShowRejectionModal] = useState(false)
+  const [approvalComments, setApprovalComments] = useState("")
+  const [finalPriority, setFinalPriority] = useState(request?.priority || "P2")
+  const [finalClassification, setFinalClassification] = useState(request?.classification || "requerimiento")
 
   // Estados para los modales
   const [isEscalationModalOpen, setIsEscalationModalOpen] = useState(false)
@@ -66,6 +72,78 @@ export function RequestDetailModal({ isOpen, onClose, request, userRole }: Reque
   const [isDragOver, setIsDragOver] = useState(false)
 
   if (!isOpen || !request) return null
+
+  // Función para aprobar solicitud
+  const handleApprove = async () => {
+    setIsProcessing(true)
+    try {
+      const response = await fetch(`/api/requests/${request.id}/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'approved',
+          leader_comments: approvalComments,
+          priority_final: finalPriority,
+          classification_final: finalClassification,
+          approved_by: userRole === 'lider_dominio' ? 'Domain Leader' : 'Manager',
+          approved_at: new Date().toISOString()
+        })
+      })
+
+      if (response.ok) {
+        alert('✅ Solicitud aprobada exitosamente')
+        setShowApprovalModal(false)
+        onClose()
+        // Emitir eventos SPA para refrescar listas y detalles sin recargar
+        try { window.dispatchEvent(new CustomEvent('requests:refresh')) } catch {}
+        try { window.dispatchEvent(new CustomEvent('request:updated', { detail: { id: request.id } })) } catch {}
+      } else {
+        alert('Error al aprobar la solicitud')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Error al aprobar la solicitud')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Función para rechazar solicitud
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      alert('Por favor ingrese una razón para el rechazo')
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch(`/api/requests/${request.id}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'rejected',
+          leader_comments: rejectionReason,
+          rejected_by: userRole === 'lider_dominio' ? 'Domain Leader' : 'Manager',
+          rejected_at: new Date().toISOString()
+        })
+      })
+
+      if (response.ok) {
+        alert('❌ Solicitud rechazada')
+        setShowRejectionModal(false)
+        onClose()
+        try { window.dispatchEvent(new CustomEvent('requests:refresh')) } catch {}
+        try { window.dispatchEvent(new CustomEvent('request:updated', { detail: { id: request.id } })) } catch {}
+      } else {
+        alert('Error al rechazar la solicitud')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Error al rechazar la solicitud')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
 
   // Datos simulados del historial de auditoría
   const auditLog = [
@@ -194,16 +272,6 @@ export function RequestDetailModal({ isOpen, onClose, request, userRole }: Reque
         mitigation: "Implementar metodología ágil con sprints cortos",
       },
     ],
-  }
-
-  const handleApprove = () => {
-    console.log("Aprobando solicitud:", request.id)
-    // Lógica de aprobación
-  }
-
-  const handleReject = () => {
-    console.log("Rechazando solicitud:", request.id, "Razón:", rejectionReason)
-    // Lógica de rechazo
   }
 
   const handleEscalate = () => {
@@ -1159,8 +1227,136 @@ export function RequestDetailModal({ isOpen, onClose, request, userRole }: Reque
 
             </div>
           </Tabs>
+
+          {/* Botones de acción para el líder */}
+          {request?.status !== 'approved' && request?.status !== 'rejected' && (
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRejectionModal(true)}
+                  className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Rechazar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEscalationModalOpen(true)}
+                  className="text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                >
+                  <ArrowUp className="h-4 w-4 mr-2" />
+                  Escalar
+                </Button>
+              </div>
+              <Button
+                onClick={() => setShowApprovalModal(true)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Aprobar Solicitud
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Modal de Aprobación */}
+      <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aprobar Solicitud</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Prioridad Final</Label>
+              <select
+                value={finalPriority}
+                onChange={(e) => setFinalPriority(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="P1">P1 - Urgente</option>
+                <option value="P2">P2 - Alta</option>
+                <option value="P3">P3 - Media</option>
+                <option value="P4">P4 - Baja</option>
+              </select>
+            </div>
+            <div>
+              <Label>Clasificación Final</Label>
+              <select
+                value={finalClassification}
+                onChange={(e) => setFinalClassification(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="proyecto">Proyecto</option>
+                <option value="requerimiento">Requerimiento</option>
+              </select>
+            </div>
+            <div>
+              <Label>Comentarios (opcional)</Label>
+              <Textarea
+                value={approvalComments}
+                onChange={(e) => setApprovalComments(e.target.value)}
+                placeholder="Agregue comentarios sobre la aprobación..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowApprovalModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleApprove}
+              disabled={isProcessing}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isProcessing ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Procesando...</>
+              ) : (
+                <><CheckCircle className="h-4 w-4 mr-2" /> Confirmar Aprobación</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Rechazo */}
+      <Dialog open={showRejectionModal} onOpenChange={setShowRejectionModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rechazar Solicitud</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Razón del Rechazo *</Label>
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Explique por qué se rechaza esta solicitud..."
+                rows={4}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectionModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleReject}
+              disabled={isProcessing || !rejectionReason.trim()}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isProcessing ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Procesando...</>
+              ) : (
+                <><XCircle className="h-4 w-4 mr-2" /> Confirmar Rechazo</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

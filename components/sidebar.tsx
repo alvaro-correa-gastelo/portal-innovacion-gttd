@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Input } from "@/components/ui/input"
+import { UTPLogo } from "@/components/ui/utp-logo"
 
 interface SidebarProps {
   onOpenTracking: (request: any) => void
@@ -66,20 +67,16 @@ export function Sidebar({ onOpenTracking, currentView, onViewChange, userRole }:
       ]
     } else if (userRole === "lider_gerencial") {
       return [
-        { id: "global-dashboard", icon: Globe, label: "Dashboard Global", badge: null },
-        { id: "approvals-inbox", icon: CheckCircle, label: "Bandeja de Aprobaciones", badge: "4" },
-        { id: "strategic-roadmap", icon: BarChart3, label: "Roadmap Estratégico", badge: null },
+        { id: "global-dashboard", icon: Globe, label: "Centro de Control Global", badge: "4" },
         { id: "reports-analytics", icon: FileText, label: "Reportes y Analíticas", badge: null },
-        { id: "domain-management", icon: Users, label: "Gestión de Dominios", badge: null },
         { id: "settings", icon: Settings, label: "Configuración", badge: null },
       ]
     } else {
-      // Solicitante (navegación original)
+      // Solicitante (navegación simplificada)
       return [
-        { id: "chat", icon: MessageSquare, label: "Mi Espacio", badge: null },
-        { id: "dashboard", icon: Home, label: "Dashboard", badge: null },
+        { id: "chat", icon: MessageSquare, label: "Mi Espacio / Nueva Solicitud", badge: null },
         { id: "history", icon: Clock, label: "Mis Solicitudes", badge: "3" },
-        { id: "documents", icon: FileText, label: "Documentos", badge: null },
+        { id: "help", icon: FileText, label: "Ayuda", badge: null },
         { id: "settings", icon: Settings, label: "Configuración", badge: null },
       ]
     }
@@ -154,7 +151,7 @@ export function Sidebar({ onOpenTracking, currentView, onViewChange, userRole }:
           className="w-full bg-utp-blue hover:bg-utp-blue-dark dark:bg-utp-red dark:hover:bg-utp-red-dark text-white font-medium"
         >
           <Globe className="w-4 h-4 mr-2" />
-          Dashboard Global
+          Centro de Control
         </Button>
       )
     }
@@ -197,19 +194,11 @@ export function Sidebar({ onOpenTracking, currentView, onViewChange, userRole }:
   const filteredHistory = displayHistory.filter((item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()))
 
   return (
-    <div className="w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-sm">
+    <div className="w-80 lg:w-80 md:w-72 sm:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-sm transition-all duration-300 h-screen">
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-utp-blue dark:bg-utp-red rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">UTP</span>
-            </div>
-            <div>
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100">UTP GTTD</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Portal de Innovación</p>
-            </div>
-          </div>
+          <UTPLogo variant="default" size="md" className="flex-1" />
           <ThemeToggle />
         </div>
 
@@ -243,58 +232,60 @@ export function Sidebar({ onOpenTracking, currentView, onViewChange, userRole }:
         </nav>
       </div>
 
-      {/* Historial Reciente */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Buscar solicitudes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-            />
+      {/* Historial Reciente - Solo para solicitantes */}
+      {userRole === "solicitante" && (
+        <div className="flex-1 p-4 overflow-y-auto">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">{getHistoryTitle()}</h3>
+          <div className="space-y-2">
+            {filteredHistory.map((item) => (
+              <div
+                key={item.id}
+                className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
+                onClick={() => onOpenTracking(item)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{item.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{item.date}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <Badge variant="secondary" className={`${item.statusColor} text-white text-xs`}>
+                    {item.status}
+                  </Badge>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">{getHistoryTitle()}</h3>
-        <div className="space-y-2">
-          {filteredHistory.map((item) => (
-            <div
-              key={item.id}
-              className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors group"
-              onClick={() => onOpenTracking(item)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{item.title}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{item.date}</p>
-                  {userRole === "lider_dominio" && <p className="text-xs text-gray-400 mt-1">Por: {item.requester}</p>}
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <Badge variant="secondary" className={`${item.statusColor} text-white text-xs`}>
-                  {item.status}
-                </Badge>
-                {userRole === "lider_dominio" && (
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${
-                      item.priority === "Alta"
-                        ? "border-red-500 text-red-500"
-                        : item.priority === "Media"
-                          ? "border-yellow-500 text-yellow-500"
-                          : "border-green-500 text-green-500"
-                    }`}
-                  >
-                    {item.priority}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          ))}
+      )}
+      
+      {/* Espacio para líderes de dominio */}
+      {userRole === "lider_dominio" && (
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="text-center py-8">
+            <BarChart3 className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Centro de Control</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              Usa el dashboard principal para gestionar todas tus solicitudes y métricas del dominio.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* Espacio para líderes gerenciales */}
+      {userRole === "lider_gerencial" && (
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="text-center py-8">
+            <Globe className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Control Estratégico</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              Gestiona todo desde el Centro de Control Global con aprobaciones integradas y analíticas avanzadas.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* User Profile */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
@@ -307,6 +298,17 @@ export function Sidebar({ onOpenTracking, currentView, onViewChange, userRole }:
             <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{userInfo.name}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{userInfo.role}</p>
           </div>
+          {userRole === "lider_gerencial" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open('/settings', '_blank')}
+              className="p-2"
+              title="Configuración del Sistema"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

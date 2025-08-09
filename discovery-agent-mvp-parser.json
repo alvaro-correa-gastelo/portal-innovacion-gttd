@@ -1,0 +1,95 @@
+{
+  "name": "evaluate_discovery_progress",
+  "description": "Evalúa el progreso del descubrimiento conversacional y determina si continuar preguntando o proceder al análisis",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "session_state": {
+        "type": "string",
+        "enum": ["discovering", "ready_for_analysis", "completed"],
+        "description": "Estado actual de la sesión de descubrimiento"
+      },
+      "completeness_score": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100,
+        "description": "Puntuación de completitud de la información recopilada"
+      },
+      "next_question": {
+        "type": "string",
+        "description": "Próxima pregunta específica para el usuario (solo si session_state = discovering)"
+      },
+      "response_message": {
+        "type": "string",
+        "description": "Mensaje de respuesta natural para el usuario"
+      },
+      "extracted_info": {
+        "type": "object",
+        "properties": {
+          "titulo_solicitud": {
+            "type": "string",
+            "description": "Título claro y descriptivo de la solicitud generado por IA"
+          },
+          "problema_principal": {
+            "type": "string",
+            "description": "Descripción específica del problema tecnológico identificado"
+          },
+          "objetivo_esperado": {
+            "type": "string",
+            "description": "Resultado o beneficio que busca obtener el solicitante"
+          },
+          "plataformas_involucradas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Canvas", "SAP", "PeopleSoft", "Office 365", "Teams",
+                "Power BI", "SharePoint", "Moodle", "Zoom", "Sistema Interno", "Otra"
+              ]
+            },
+            "description": "Lista de plataformas UTP mencionadas o inferidas"
+          },
+          "beneficiarios": {
+            "type": "string",
+            "description": "Quiénes se beneficiarían de la solución"
+          },
+          "frecuencia_uso": {
+            "type": "string",
+            "enum": ["diario", "semanal", "mensual", "esporadico"],
+            "description": "Frecuencia de uso de la solución"
+          },
+          "urgencia": {
+            "type": "string",
+            "enum": ["baja", "media", "alta", "critica"],
+            "description": "Nivel de urgencia detectado"
+          },
+          "departamento_solicitante": {
+            "type": "string",
+            "enum": ["Académico", "Administrativo", "Financiero", "RRHH", "Investigación", "Extensión", "GTTD", "Otro"],
+            "description": "Departamento del solicitante"
+          }
+        },
+        "description": "Información extraída hasta el momento"
+      },
+      "missing_fields": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Lista de campos que aún faltan por completar"
+      },
+      "conversation_context": {
+        "type": "string",
+        "description": "Resumen del contexto de la conversación hasta el momento"
+      }
+    },
+    "required": [
+      "session_state",
+      "completeness_score",
+      "response_message",
+      "extracted_info",
+      "missing_fields",
+      "conversation_context"
+    ]
+  }
+}

@@ -42,7 +42,7 @@ Del mensaje actual y historial, extrae:
 - Stakeholders involucrados
 - Frecuencia/volumen
 - Herramientas actuales
-- Urgencia
+- Plazo deseado para resultados
 
 PASO 6 - CALCULAR COMPLETITUD (0-100%):
 - Problema identificado: +20 puntos
@@ -52,11 +52,11 @@ PASO 6 - CALCULAR COMPLETITUD (0-100%):
 - Volumen cuantificado: +10 puntos
 - Herramientas actuales: +10 puntos
 - Stakeholders identificados: +10 puntos
-- Urgencia definida: +5 puntos
+- Plazo deseado definido: +5 puntos
 
 PASO 7 - HACER PREGUNTAS SEGÚN COMPLETITUD:
 - Si < 30%: 2-3 preguntas básicas sobre el problema
-- Si 30-74%: 1-2 preguntas específicas para gaps
+- Si 30-74%: 1-2 preguntas específicas para gaps. Una de tus preguntas clave debe ser: **"¿En cuánto tiempo esperas ver los primeros resultados de esta solución?"**, ofreciendo las opciones: 'Menos de 1 mes', 'Entre 1 y 3 meses', 'Entre 3 y 6 meses', o 'Sin fecha definida'.
 - Si ≥ 75%: Confirmar información y proceder a summary
 
 PASO 8 - ACTUALIZAR SESIÓN:

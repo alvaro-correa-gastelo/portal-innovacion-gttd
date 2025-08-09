@@ -14,6 +14,8 @@ import {
   PlusCircle,
   Eye,
   ArrowRight,
+  Download,
+  Crown
 } from "lucide-react"
 
 interface DashboardProps {
@@ -119,6 +121,54 @@ export default function Dashboard({ onViewChange }: DashboardProps) {
 
   const handleOpenTracking = (request: any) => {
     console.log("Abriendo tracking para:", request.title)
+  }
+
+  const handleGenerateReport = async (request: any) => {
+    try {
+      console.log("Generando reporte para:", request.title)
+
+      // Datos mock para el reporte
+      const reportData = {
+        session_id: `session-${request.id}`,
+        user_name: "Usuario Demo",
+        department: "Sistemas",
+        title: request.title,
+        description: `Solicitud de ${request.title}`,
+        priority: request.priority.toLowerCase(),
+        effort: "medium",
+        classification: request.type.toLowerCase(),
+        impact_analysis: "Impacto significativo en la eficiencia operativa",
+        resources: "2 desarrolladores, 8 semanas",
+        risks: "Riesgo bajo, dependencias mínimas",
+        recommendation: "APROBAR - Alto ROI, bajo riesgo"
+      }
+
+      // Llamar a la API para generar PDF
+      const response = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: reportData.session_id,
+          report_type: 'user',
+          data: reportData
+        })
+      })
+
+      if (response.ok) {
+        // Descargar el PDF
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `reporte-${request.title.replace(/\s+/g, '-').toLowerCase()}.pdf`
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } else {
+        console.error('Error al generar reporte')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+    }
   }
 
   return (
@@ -240,18 +290,29 @@ export default function Dashboard({ onViewChange }: DashboardProps) {
 
                           {/* Acciones */}
                           <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleOpenTracking(request)}
                               className="flex-1 h-8 text-xs"
                             >
                               <Eye className="h-3 w-3 mr-1" />
                               Ver
                             </Button>
+                            {request.status === "Completada" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleGenerateReport(request)}
+                                className="h-8 px-2 border-green-300 text-green-700 hover:bg-green-50"
+                                title="Generar reporte"
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            )}
                             {request.hasUnreadMessages && (
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 className="h-8 px-2 border-blue-300 text-blue-700 hover:bg-blue-50"
                               >

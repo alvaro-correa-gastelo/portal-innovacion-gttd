@@ -22,8 +22,11 @@ import {
   AlertCircle,
   Clock,
   FileText,
+  Cog,
+  Settings
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
+import { SimpleConfigurationPanel } from "./simple-configuration-panel"
 
 export default function SettingsView() {
   const [notifications, setNotifications] = useState({
@@ -96,7 +99,7 @@ export default function SettingsView() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center space-x-2">
               <User className="h-4 w-4" />
               <span>Perfil</span>
@@ -112,6 +115,10 @@ export default function SettingsView() {
             <TabsTrigger value="security" className="flex items-center space-x-2">
               <Shield className="h-4 w-4" />
               <span>Seguridad</span>
+            </TabsTrigger>
+            <TabsTrigger value="system" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Sistema</span>
             </TabsTrigger>
           </TabsList>
 
@@ -383,6 +390,11 @@ export default function SettingsView() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Nueva Tab: Configuración del Sistema */}
+          <TabsContent value="system">
+            <SimpleConfigurationPanel />
           </TabsContent>
         </Tabs>
       </div>

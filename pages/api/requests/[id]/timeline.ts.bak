@@ -1,0 +1,107 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { query } from '@/lib/database'
+
+// Esta API obtiene el timeline/historial de una solicitud desde requests_audit
+
+interface TimelineEvent {
+  id: string
+  request_id: string
+  action_type: string
+  previous_status?: string
+  new_status?: string
+  leader_id?: string
+  comments?: string
+  created_at: string
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { id } = req.query
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  if (!id) {
+    return res.status(400).json({ error: 'Request ID is required' })
+  }
+
+  try {
+    const timelineEvents = await getRequestTimelineFromDB(id as string)
+    
+    // Transformar los datos para el frontend
+    const transformedEvents = timelineEvents.map(event => ({
+      id: event.id,
+      status: event.new_status || event.action_type,
+      comment: event.comments,
+      user_name: event.leader_id, // Podrías hacer JOIN con tabla de users para obtener el nombre
+      created_at: event.created_at,
+      action_type: event.action_type
+    }))
+
+    return res.status(200).json(transformedEvents)
+
+  } catch (error) {
+    console.error('Error fetching timeline:', error)
+    return res.status(500).json({ 
+      error: 'Error interno del servidor',
+      message: 'No se pudo obtener el historial de la solicitud'
+    })
+  }
+}
+
+// Función para obtener el timeline desde PostgreSQL
+async function getRequestTimelineFromDB(requestId: string): Promise<TimelineEvent[]> {
+  try {
+    const sqlQuery = `
+      SELECT 
+        ra.id::text,
+        ra.request_id::text,
+        ra.action_type,
+        ra.previous_status,
+        ra.new_status,
+        ra.leader_id,
+        ra.comments,
+        ra.created_at
+      FROM requests_audit ra
+      WHERE ra.request_id = $1
+      ORDER BY ra.created_at ASC
+    `
+
+    const result = await query(sqlQuery, [requestId])
+    return result.rows
+  } catch (error) {
+    console.error('Error fetching timeline from DB:', error)
+    // Fallback a datos de ejemplo si hay error de conexión
+    return [
+    {
+      id: '1',
+      request_id: requestId,
+      action_type: 'created',
+      new_status: 'pending_technical_analysis',
+      comments: 'Solicitud creada automáticamente',
+      created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      leader_id: 'system'
+    },
+    {
+      id: '2',
+      request_id: requestId,
+      action_type: 'status_change',
+      previous_status: 'pending_technical_analysis',
+      new_status: 'pending_approval',
+      comments: 'Análisis técnico completado',
+      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      leader_id: 'ia-system'
+    },
+    {
+      id: '3',
+      request_id: requestId,
+      action_type: 'status_change',
+      previous_status: 'pending_approval',
+      new_status: 'in_evaluation',
+      comments: 'Iniciando evaluación por líder de dominio',
+      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      leader_id: 'juan.perez@empresa.com'
+    }
+  ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["route", "error"],
+      "description": "Action type"
+    },
+    "next_agent": {
+      "type": "string", 
+      "enum": ["discovery_agent", "summary_agent", "report_sender"],
+      "description": "Next agent to route to"
+    },
+    "session_data": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "Session UUID from database"
+        },
+        "user_query": {
+          "type": "string",
+          "description": "User's message"
+        },
+        "current_step": {
+          "type": "string",
+          "description": "Current workflow step"
+        },
+        "user_profile": {
+          "type": "object",
+          "properties": {
+            "user_id": {"type": "string"},
+            "name": {"type": "string"},
+            "department": {"type": "string"},
+            "role": {"type": "string"},
+            "email": {"type": "string"}
+          },
+          "required": ["user_id", "name", "department", "role", "email"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["session_id", "user_query", "current_step", "user_profile"],
+      "additionalProperties": false
+    },
+    "reasoning": {
+      "type": "string", 
+      "maxLength": 100,
+      "description": "Brief explanation"
+    }
+  },
+  "required": ["action", "next_agent", "session_data", "reasoning"],
+  "additionalProperties": false
+}

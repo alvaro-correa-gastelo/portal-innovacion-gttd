@@ -56,16 +56,57 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // UTP Corporate Colors
+        // UTP Corporate Colors - Colores oficiales y variantes
         utp: {
-          blue: "#0055A4", // Color corporativo UTP actualizado
+          // Azul corporativo UTP con variantes
+          blue: "#0055A4", // Azul corporativo principal
+          "blue-50": "#EBF4FF",
+          "blue-100": "#DBEAFE", 
+          "blue-200": "#BFDBFE",
+          "blue-300": "#93C5FD",
+          "blue-400": "#60A5FA",
+          "blue-500": "#3B82F6",
+          "blue-600": "#0055A4", // Principal
+          "blue-700": "#003D7A",
+          "blue-800": "#1E40AF",
+          "blue-900": "#1E3A8A",
+          "blue-dark": "#003D7A",
           "blue-light": "#3B82F6",
-          "blue-dark": "#003D7A", // Versión más oscura del azul UTP
-          red: "#DC2626",
-          "red-light": "#EF4444",
-          "red-dark": "#B91C1C",
-          gray: "#6B7280",
-          "gray-light": "#F3F4F6",
+          
+          // Rojo UTP con variantes (basado en logo oficial)
+          red: "#D52B1E", // Rojo corporativo oficial UTP
+          "red-50": "#FEF2F1",
+          "red-100": "#FEE2E0",
+          "red-200": "#FCC8C2",
+          "red-300": "#FAA59A",
+          "red-400": "#F67A6B",
+          "red-500": "#EF4D3C",
+          "red-600": "#D52B1E", // Principal (del logo)
+          "red-700": "#B92318",
+          "red-800": "#981E15",
+          "red-900": "#7F1A12",
+          "red-dark": "#B92318",
+          "red-light": "#EF4D3C",
+          
+          // Grises corporativos
+          gray: {
+            50: "#F9FAFB",
+            100: "#F3F4F6", 
+            200: "#E5E7EB",
+            300: "#D1D5DB",
+            400: "#9CA3AF",
+            500: "#6B7280", // Principal
+            600: "#4B5563",
+            700: "#374151",
+            800: "#1F2937",
+            900: "#111827",
+          },
+          
+          // Colores de estado
+          success: "#10B981",
+          warning: "#F59E0B",
+          error: "#EF4444",
+          info: "#3B82F6",
         },
       },
       borderRadius: {

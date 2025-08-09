@@ -108,7 +108,40 @@
       "type": "object",
       "properties": {
         "complete_info": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "problema_principal": {
+              "type": "string",
+              "description": "Descripción del problema principal reportado."
+            },
+            "objetivo_esperado": {
+              "type": "string",
+              "description": "El resultado o meta que se espera alcanzar."
+            },
+            "plataformas_involucradas": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Sistemas o plataformas afectadas."
+            },
+            "beneficiarios": {
+              "type": "string",
+              "description": "Grupos o cantidad de usuarios beneficiados."
+            },
+            "frecuencia_uso": {
+              "type": "string",
+              "enum": ["diario", "semanal", "mensual", "esporadico"],
+              "description": "Frecuencia con la que ocurre el problema o se usa el proceso."
+            },
+            "plazo_deseado": {
+              "type": "string",
+              "enum": ["menos_1_mes", "1_a_3_meses", "3_a_6_meses", "sin_definir"],
+              "description": "Plazo esperado para ver los primeros resultados."
+            },
+            "departamento_solicitante": {
+              "type": "string",
+              "description": "Departamento que origina la solicitud."
+            }
+          }
         },
         "completeness_breakdown": {
           "type": "object"
