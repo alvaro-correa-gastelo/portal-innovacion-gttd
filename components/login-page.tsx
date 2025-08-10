@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,6 +21,12 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [mounted, setMounted] = useState(false)
+
+  // Evitar hydration mismatch en SSR renderizando el logo solo en el cliente
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Usuarios de prueba según las especificaciones
   const testUsers = {
@@ -56,14 +62,19 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         {/* Tarjeta Principal de Login */}
         <Card className="shadow-xl border-0 bg-white">
           <CardHeader className="text-center pb-6 pt-8">
-            {/* Logo UTP oficial */}
-            <div className="flex justify-center mb-6">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Utplogonuevo.svg/2560px-Utplogonuevo.svg.png"
-                alt="Universidad Tecnológica del Perú"
-                className="h-12 w-auto object-contain"
-                loading="eager"
-              />
+            {/* Logo UTP oficial: wrapper constante para SSR/CSR; img solo en cliente */}
+            <div className="flex justify-center mb-6" style={{ minHeight: '3rem' }} suppressHydrationWarning>
+              {mounted ? (
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Utplogonuevo.svg/2560px-Utplogonuevo.svg.png"
+                  alt="Universidad Tecnológica del Perú"
+                  className="h-12 w-auto object-contain"
+                  loading="eager"
+                />
+              ) : (
+                // Placeholder para mantener estructura y altura durante SSR
+                <span className="inline-block" style={{ height: '3rem' }} aria-hidden />
+              )}
             </div>
 
             {/* Título y Subtítulo */}

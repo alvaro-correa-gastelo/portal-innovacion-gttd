@@ -114,9 +114,9 @@ NEXT_PUBLIC_N8N_WEBHOOK_URL=tu_n8n_webhook_url
 ## 🤖 Configuración del Agente IA
 
 ### **1. Configurar n8n**
-- Seguir la guía: `GUIA_CONFIGURACION_AGENTE_IA_N8N.md`
-- Importar workflows desde: `InsightBot_AI_Agent_Workflow.json`
-- Configurar credenciales de Gemini y Supabase
+ - Seguir la guía: `GUIA_CONFIGURACION_AGENTE_IA_N8N.md`
+ - Usar el workflow de producción en n8n (este repositorio no incluye archivos JSON de workflows). Consulta `DOCS/N8N_STATE_MODEL.md` y `DOCS/N8N_EVENT_ROUTER_AND_FINALIZATION.md` para el mapa de nodos y eventos.
+ - Configurar credenciales de Gemini y Supabase
 
 ### **2. Configurar Base de Datos**
 ```sql
@@ -184,16 +184,19 @@ portal-innovacion-gttd/
 ├── 📁 styles/                                    # Estilos adicionales
 │   └── 📄 globals.css                           # Estilos globales adicionales
 │
-└── 📁 docs/                                     # Documentación
-    ├── 📄 CONTEXTO_COMPLETO_PORTAL_INNOVACION_GTTD.md
-    ├── 📄 IMPLEMENTACION_AGENTE_1_INSIGHTBOT.md
-    ├── 📄 GUIA_CONFIGURACION_AGENTE_IA_N8N.md
-    ├── 📄 ARQUITECTURA_BD_AGENTE_IA_N8N.md
-    ├── 📄 ESQUEMA_ALTO_NIVEL_INSIGHTBOT.md
-    ├── 📄 GUIA_DESPLIEGUE_GRATUITO.md
-    ├── 📄 InsightBot_AI_Agent_Workflow.json
-    ├── 📄 Context_Analyzer_Tool_Workflow.json
-    └── 📄 Data_Extractor_Tool_Workflow.json
+└── 📁 DOCS/                                     # Documentación
+    ├── 📄 N8N_STATE_MODEL.md                    # Estados y eventos del workflow
+    ├── 📄 N8N_EVENT_ROUTER_AND_FINALIZATION.md  # Ruteo por eventos y rama de finalización (SUMMARY_CONFIRMED)
+    ├── 📄 FINALIZATION_WORKFLOW_GUIDE.md        # Guía práctica de la rama de finalización
+    ├── 📄 GUIA_CONFIGURACION_AGENTE_IA_N8N.md   # Setup del agente IA en n8n
+    ├── 📄 DATABASE_SETUP.md                     # Variables y scripts de BD
+    ├── 📄 ARQUITECTURA_TECNICA_PORTAL_INNOVACION_GTTD.md
+    ├── 📄 DOCUMENTACION_VISTAS_DIFERENCIADAS.md # Diferencias por rol en modales
+    ├── 📄 MEJORAS_MODALES_IMPLEMENTADAS.md
+    ├── 📄 MEJORAS_MODALES_VALORES_EFECTIVOS.md
+    └── 📄 api-endpoints-enhanced.md
+    
+    (Material histórico y borradores se encuentran en `DOCS/ARCHIVED/`, excluido del repo por Git.)
 ```
 
 ## 🌐 Despliegue
@@ -233,6 +236,12 @@ Ver guía completa: `GUIA_DESPLIEGUE_GRATUITO.md`
 - Métricas de n8n
 - Logs de Supabase
 - Feedback de usuarios
+
+## 🤝 Transparencia y uso de IA
+
+- Este proyecto integra un agente IA (n8n + Gemini). El código del portal y la lógica de integración son propios; los artefactos experimentales y borradores generados por IA se mantienen en `DOCS/ARCHIVED/` y no se publican.
+- Recomendación para GitHub: documentar claramente el flujo real (estado inicial `submitted`, rama de finalización tras `SUMMARY_CONFIRMED`) y enlazar solo a guías vigentes en `DOCS/`.
+- Recomendación para LinkedIn: comunicar que la solución combina ingeniería propia con un agente IA orquestado en n8n para acelerar descubrimiento y formalización de solicitudes. Enfatiza el resultado (ganaron el reto) y los aspectos técnicos clave (SPA con Next.js, integración n8n/Supabase, timeline robusto). No es necesario exponer prompts o borradores.
 
 ## 🔮 Roadmap
 

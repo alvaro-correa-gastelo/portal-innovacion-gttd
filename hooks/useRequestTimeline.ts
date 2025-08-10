@@ -33,7 +33,7 @@ export function useRequestTimeline(requestId: number | string): UseRequestTimeli
 
     try {
       // Llamar a la API para obtener el historial real de la solicitud
-      const response = await fetch(`/api/requests/${requestId}/timeline`)
+      const response = await fetch(`/api/requests/${requestId}/timeline?audience=user`)
       
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
@@ -91,6 +91,7 @@ export function useRequestTimeline(requestId: number | string): UseRequestTimeli
 // Funciones auxiliares para transformar datos
 function getStatusLabel(status: string): string {
   const statusMap: { [key: string]: string } = {
+    'submitted': 'Solicitud Recibida',
     // Estados en español
     'pending_technical_analysis': 'Análisis Técnico Inicial',
     'pending_approval': 'Pendiente de Aprobación',
@@ -109,7 +110,6 @@ function getStatusLabel(status: string): string {
     
     // Otros casos comunes
     'created': 'Solicitud Creada',
-    'submitted': 'Solicitud Enviada',
     'assigned': 'Solicitud Asignada'
   }
   return statusMap[status] || 'Estado Actualizado'
@@ -117,6 +117,7 @@ function getStatusLabel(status: string): string {
 
 function getStatusIcon(status: string): string {
   const iconMap: { [key: string]: string } = {
+    'submitted': 'FileText',
     'pending_approval': 'FileText',
     'in_evaluation': 'TrendingUp',
     'pending_technical_analysis': 'Zap',
@@ -129,6 +130,7 @@ function getStatusIcon(status: string): string {
 
 function getStatusColor(status: string): string {
   const colorMap: { [key: string]: string } = {
+    'submitted': 'text-slate-600',
     'pending_approval': 'text-blue-600',
     'in_evaluation': 'text-orange-600',
     'pending_technical_analysis': 'text-purple-600',
@@ -141,6 +143,7 @@ function getStatusColor(status: string): string {
 
 function getStatusBgColor(status: string): string {
   const bgColorMap: { [key: string]: string } = {
+    'submitted': 'bg-slate-100',
     'pending_approval': 'bg-blue-100',
     'in_evaluation': 'bg-orange-100',
     'pending_technical_analysis': 'bg-purple-100',
@@ -153,6 +156,7 @@ function getStatusBgColor(status: string): string {
 
 function getDefaultDescription(status: string): string {
   const descriptionMap: { [key: string]: string } = {
+    'submitted': 'Tu solicitud ha sido recibida y está en cola',
     'pending_approval': 'Tu solicitud ha sido recibida y está siendo procesada',
     'in_evaluation': 'Un líder de dominio está evaluando tu solicitud',
     'pending_technical_analysis': 'Se está realizando el análisis técnico de viabilidad',

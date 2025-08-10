@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
 import { Pool } from 'pg'
 
 // Configuración de la base de datos (Neon)
@@ -10,10 +14,12 @@ const pool = new Pool({
 // GET /api/requests/[id]/timeline
 // Returns audit/history entries for a request, newest last
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id: requestId } = await context.params
+  const url = new URL(req.url)
+  const audience = (url.searchParams.get('audience') || 'leader').toLowerCase()
 
   if (!requestId) {
     return NextResponse.json({ success: false, error: 'Falta requestId' }, { status: 400 })
@@ -69,18 +75,52 @@ export async function GET(
       }
     }
 
-    // Return raw-ish events; front-end hook maps to UI fields
-    const data = rows.map((ev, idx) => ({
-      id: ev.id ?? idx + 1,
-      action_type: ev.action_type || ev.new_status || 'update',
-      status: ev.new_status || ev.action_type || 'update',
-      created_at: ev.created_at,
-      fecha_cambio: ev.created_at,
-      comments: ev.comments,
-      comment: ev.comments,
-      user_name: ev.user_name,
-      leader_id: ev.leader_id,
-    }))
+    // Helper sanitizers for requester
+    const sanitizeText = (input: string) => {
+      if (!input) return ''
+      let text = input as string
+      text = text.replace(/\s*---\s*INFO:.*/i, '')
+      text = text.replace(/Clasificación(?:\s+final)?\s*:\s*[^.|\n]+[.|\n]?/gi, '')
+      text = text.replace(/Prioridad(?:\s+final)?\s*:\s*[^.|\n]+[.|\n]?/gi, '')
+      text = text.replace(/(requiere|requirió) aprobación gerencial\.?/gi, '')
+      text = text.replace(/aprobación gerencial necesaria\.?/gi, '')
+      text = text.replace(/enviado a aprobación gerencial\.?/gi, '')
+      text = text.replace(/pendiente de aprobación gerencial\.?/gi, '')
+      return text.replace(/\s{2,}/g, ' ').replace(/\s+\./g, '.').trim()
+    }
+    const formatUser = (user?: string) => {
+      if (!user) return undefined
+      const local = String(user).split('@')[0]
+      return (local || user).replace(/\./g, ' ')
+    }
+
+    // Return events; sanitize if audience=user
+    const data = rows.map((ev, idx) => {
+      const action = ev.action_type || ev.new_status || 'update'
+      const status = ev.new_status || ev.action_type || 'update'
+      const base = {
+        id: ev.id ?? idx + 1,
+        action_type: action,
+        status,
+        created_at: ev.created_at,
+        fecha_cambio: ev.created_at,
+        comments: ev.comments,
+        comment: ev.comments,
+        user_name: ev.user_name,
+        leader_id: ev.leader_id,
+      }
+      if (audience === 'user') {
+        return {
+          ...base,
+          // Mantener status original (el cliente lo mapea), pero limpiar textos y autor
+          comments: sanitizeText(ev.comments || ''),
+          comment: sanitizeText(ev.comments || ''),
+          user_name: formatUser(ev.user_name || ev.leader_id) || undefined,
+          leader_id: undefined,
+        }
+      }
+      return base
+    })
 
     return NextResponse.json({ success: true, data })
   } catch (error) {

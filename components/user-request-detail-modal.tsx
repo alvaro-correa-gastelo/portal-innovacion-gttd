@@ -43,15 +43,36 @@ function sanitizeForRequester(input: string): string {
   // Cortar todo lo que venga después de un separador de info interna común
   text = text.replace(/\s*---\s*INFO:.*/i, "")
   // Remover bloques explícitos de clasificación/prioridad
-  text = text.replace(/Clasificación\s*:\s*[^.|\n]+[.|\n]?/gi, "")
-  text = text.replace(/Prioridad\s*:\s*[^.|\n]+[.|\n]?/gi, "")
+  text = text.replace(/Clasificación(?:\s+final)?\s*:\s*[^.|\n]+[.|\n]?/gi, "")
+  text = text.replace(/Prioridad(?:\s+final)?\s*:\s*[^.|\n]+[.|\n]?/gi, "")
   // Frases internas típicas
   text = text.replace(/(requiere|requiri\u00f3) aprobaci\u00f3n gerencial\.?/gi, "")
   text = text.replace(/aprobaci\u00f3n gerencial necesaria\.?/gi, "")
+  text = text.replace(/enviado a aprobaci\u00f3n gerencial\.?/gi, "")
+  text = text.replace(/pendiente de aprobaci\u00f3n gerencial\.?/gi, "")
   // Normalizar espacios y puntuación sobrante
   text = text.replace(/\s{2,}/g, " ").replace(/\s+\./g, ".").trim()
   // Si quedó vacío, mostrar un mensaje genérico
   return text || "Actualización registrada"
+}
+
+// Ocultar/matizar estados internos en el timeline del solicitante
+function sanitizeStatusForRequester(status: string, finalStatus?: string): string {
+  if (!status) return "Actualización"
+  const s = status.toLowerCase()
+  // Si el paso dice "aprobada" pero la solicitud aún no está aprobada, suavizar
+  if (s.includes("aprobada") && finalStatus !== 'approved') return "Actualización registrada"
+  if (s.includes("clasificaci")) return "Clasificación actualizada"
+  if (s.includes("prioridad")) return "Actualización de prioridad"
+  if (s.includes("aprobaci")) return "En revisión final"
+  return status
+}
+
+// Formatear autor para el solicitante (evitar mails completos)
+function formatUserForRequester(user?: string): string {
+  if (!user) return "Equipo de Innovación"
+  const match = user.split('@')[0]
+  return (match || user).replace(/\./g, ' ')
 }
 
 interface UserRequestDetailModalProps {
@@ -74,7 +95,7 @@ export function UserRequestDetailModal({ isOpen, onClose, request: requestProp }
   const [editableClassification, setEditableClassification] = useState<'proyecto' | 'requerimiento'>(initialClassification)
 
   // Tipos de apoyo para helpers
-  type StatusKey = 'pending_approval' | 'pending_technical_analysis' | 'in_evaluation' | 'approved' | 'rejected' | 'on_hold'
+  type StatusKey = 'submitted' | 'pending_approval' | 'pending_technical_analysis' | 'in_evaluation' | 'approved' | 'rejected' | 'on_hold'
   type PriorityKey = 'P1' | 'P2' | 'P3' | 'P4'
   
   // Hooks para obtener datos reales
@@ -345,32 +366,32 @@ export function UserRequestDetailModal({ isOpen, onClose, request: requestProp }
                             const isPending = !step.completed
                             
                             return (
-                              <div key={step.id} className="relative">
-                                {/* Línea de conexión más visible */}
+                              <div key={step.id} className="relative pl-2">
+                                {/* Conector vertical alineado al centro del ícono y ocupando toda la altura del ítem */}
                                 {index < timeline.length - 1 && (
-                                  <div className={`absolute left-6 top-16 w-0.5 h-16 ${
+                                  <div className={`absolute left-6 top-12 bottom-0 w-0.5 ${
                                     isCompleted ? 'bg-blue-300 dark:bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                                  }`}></div>
+                                  }`} />
                                 )}
   
-                                <div className={`flex items-start space-x-4 p-4 rounded-lg border-2 transition-all ${
+                                <div className={`flex items-start space-x-4 p-4 rounded-xl border transition-all ${
                                   isCurrentStep 
-                                    ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-600 shadow-md' 
-                                    : isCompleted
-                                    ? 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-700' 
-                                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+                                    ? 'bg-blue-50/70 dark:bg-blue-950/50 border-blue-300 dark:border-blue-600 shadow-md' 
+                                  : isCompleted
+                                    ? 'bg-green-50/70 dark:bg-green-950/40 border-green-200 dark:border-green-700' 
+                                    : 'bg-gray-50/60 dark:bg-gray-800/60 border-gray-200 dark:border-gray-600'
                                 }`}>
-                                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${
+                                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ring-2 ${
                                     isCurrentStep
-                                      ? 'bg-blue-100 border-blue-400 dark:bg-blue-900 dark:border-blue-500'
-                                      : isCompleted 
-                                      ? 'bg-green-100 border-green-400 dark:bg-green-900 dark:border-green-500'
-                                      : 'bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600 opacity-60'
+                                      ? 'bg-blue-100 border-blue-400 dark:bg-blue-900 dark:border-blue-500 ring-blue-200/60 dark:ring-blue-800/40'
+                                    : isCompleted 
+                                      ? 'bg-green-100 border-green-400 dark:bg-green-900 dark:border-green-500 ring-green-200/50'
+                                      : 'bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600 ring-transparent opacity-70'
                                   }`}>
                                     <StepIcon className={`h-5 w-5 ${
                                       isCurrentStep
                                         ? 'text-blue-600 dark:text-blue-400'
-                                        : isCompleted 
+                                      : isCompleted 
                                         ? 'text-green-600 dark:text-green-400'
                                         : 'text-gray-400 dark:text-gray-500'
                                     }`} />
@@ -384,21 +405,21 @@ export function UserRequestDetailModal({ isOpen, onClose, request: requestProp }
                                           ? 'text-green-900 dark:text-green-100' 
                                           : 'text-gray-500 dark:text-gray-400'
                                       }`}>
-                                        {step.status}
+                                        {sanitizeStatusForRequester(step.status, request?.status)}
                                       </h3>
                                       {isCurrentStep && (
-                                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                                        <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-blue-100/80 text-blue-700 border-blue-300">
                                           Actual
                                         </Badge>
                                       )}
                                       {isCompleted && !isCurrentStep && (
-                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                        <CheckCircle className="h-4 w-4 text-green-500" aria-label="Completado" />
                                       )}
                                     </div>
-                                    <p className={`text-sm mt-1 ${
+                                    <p className={`text-sm leading-relaxed mt-1 ${
                                       isCurrentStep
                                         ? 'text-blue-700 dark:text-blue-300'
-                                        : isCompleted 
+                                      : isCompleted 
                                         ? 'text-green-700 dark:text-green-300' 
                                         : 'text-gray-400 dark:text-gray-500'
                                     }`}>
@@ -408,7 +429,7 @@ export function UserRequestDetailModal({ isOpen, onClose, request: requestProp }
                                     {step.user && (
                                       <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
                                         <User className="h-3 w-3 inline mr-1" />
-                                        {step.user}
+                                        {formatUserForRequester(step.user)}
                                       </p>
                                     )}
                                     <p className="text-xs mt-2 text-gray-400 dark:text-gray-500">
@@ -459,6 +480,7 @@ export function UserRequestDetailModal({ isOpen, onClose, request: requestProp }
 // Funciones auxiliares
 function getStatusBadgeColor(status: string) {
   const configs = {
+    submitted: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300',
     pending_approval: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
     pending_technical_analysis: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
     in_evaluation: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
@@ -472,6 +494,7 @@ function getStatusBadgeColor(status: string) {
 
 function getProgressPercentage(status: string) {
   const percentages = {
+    submitted: 10,
     pending_approval: 25,
     pending_technical_analysis: 35,
     in_evaluation: 60,
@@ -485,6 +508,7 @@ function getProgressPercentage(status: string) {
 
 function getProgressMessage(status: string) {
   const messages = {
+    submitted: 'Tu solicitud fue recibida y está en cola para revisión',
     pending_approval: 'Tu solicitud está esperando aprobación gerencial',
     pending_technical_analysis: 'En proceso de análisis técnico',
     in_evaluation: 'Un especialista está evaluando tu solicitud',
@@ -509,6 +533,7 @@ function getCurrentOrEstimatedDate(status: string, step: number) {
 
 function getStatusLabel(status: string) {
   const statusMap = {
+    submitted: 'Recibida',
     pending_approval: 'Pendiente Aprobación',
     pending_technical_analysis: 'Análisis Técnico', 
     in_evaluation: 'En Evaluación',

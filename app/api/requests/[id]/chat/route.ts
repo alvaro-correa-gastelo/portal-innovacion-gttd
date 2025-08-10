@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
 import { Pool } from 'pg'
 
 // Configuración de la base de datos (Neon)
@@ -88,7 +92,7 @@ export async function GET(
       if (result.rows.length > 0) {
         // Si hay mensajes reales, devolverlos
         return NextResponse.json(
-          result.rows.map(row => ({
+          result.rows.map((row: any) => ({
             id: row.id,
             from: getDisplayName(row.role, row.agent_name),
             user_name: getDisplayName(row.role, row.agent_name),

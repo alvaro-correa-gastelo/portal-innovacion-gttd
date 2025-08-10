@@ -1,5 +1,7 @@
 "use client"
 
+// Nota: No exportar dynamic/revalidate/fetchCache desde Client Components
+
 import { useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { ChatInterface } from "@/components/chat-interface"
@@ -9,7 +11,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { NotificationCenter } from "@/components/notification-center"
 import { Toaster } from "@/components/ui/toaster"
-import { LoginPage } from "@/components/login-page"
+import dynamic from "next/dynamic"
+const LoginPageClient = dynamic(() => import("@/components/login-page").then(m => m.LoginPage), { ssr: false })
 import { LeaderDashboard } from "@/components/leader-dashboard"
 import { RealisticLeaderModal } from "@/components/realistic-leader-modal"
 import { UserRequestDetailModal } from "@/components/user-request-detail-modal"
@@ -190,7 +193,7 @@ export default function PortalInnovacion() {
   if (!isAuthenticated) {
     return (
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-        <LoginPage onLogin={handleLogin} />
+        <LoginPageClient onLogin={handleLogin} />
         <Toaster />
       </ThemeProvider>
     )

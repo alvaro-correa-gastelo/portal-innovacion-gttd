@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
 import { Pool } from 'pg'
 
 // Configuración de la base de datos (Neon)
@@ -112,12 +117,12 @@ export async function GET(request: NextRequest) {
     }
     
     // Transformar datos para el frontend
-    const requests = result.rows.map(row => ({
+    const requests = result.rows.map((row: any) => ({
       id: row.id,
       session_id: row.session_id,
       user_id: row.user_id,
-      title: row.titulo_solicitud,
-      problem: row.problema_principal,
+      title: row.titulo_solicitud ?? row.title ?? 'Sin título',
+      problem: row.problema_principal ?? row.description ?? '',
       objective: row.objetivo_esperado,
       platforms: row.plataformas_involucradas || [],
       beneficiaries: row.beneficiarios,
