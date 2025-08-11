@@ -7,6 +7,38 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 })
 
+// Alinear con otros handlers: runtime Node y sin caché
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
+
+// GET de cortesía (evita 404 por GET en Vercel)
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  return NextResponse.json({
+    success: true,
+    message: 'Use PUT to reject a request',
+    request_id: params.id,
+    allowed_methods: ['PUT', 'OPTIONS']
+  })
+}
+
+// OPTIONS para preflight CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'PUT, OPTIONS, GET',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Cache-Control': 'no-store',
+    },
+  })
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
