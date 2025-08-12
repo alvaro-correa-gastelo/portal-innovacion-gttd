@@ -12,9 +12,12 @@ export function middleware(_req: NextRequest) {
 
 // Only apply to pages and API routes (not static assets)
 export const config = {
-  matcher: [
-    '/',
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|map)).*)',
-    '/api/:path*',
-  ],
+  /*
+   * Match all request paths except for the ones starting with:
+   * - _next/static (static files)
+   * - _next/image (image optimization files)
+   * - favicon.ico (favicon file)
+   * This ensures the middleware runs on all pages and API routes.
+   */
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
