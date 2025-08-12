@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Pool } from 'pg'
+
+// Route segment config to ensure dynamic execution and no caching
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
 export const runtime = 'nodejs'
-import { Pool } from 'pg'
 
 // Configuración de la base de datos (Neon)
 const pool = new Pool({

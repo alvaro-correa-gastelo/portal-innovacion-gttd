@@ -1,17 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
+
 import { Pool } from 'pg'
+
+// Route segment config to ensure dynamic execution and no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
 
 // Configuración de la base de datos (Neon)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 })
-
-// Alinear flags con otros handlers para evitar cachés y edge-runtime
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
-export const runtime = 'nodejs'
 
 // GET de cortesía para health-checks en producción (evita 404 por GET)
 export async function GET(
