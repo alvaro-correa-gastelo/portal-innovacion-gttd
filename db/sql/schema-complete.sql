@@ -161,28 +161,7 @@ INSERT INTO scoring_configurations (
     gen_random_uuid(),
     'Configuración Default',
     '1.0',
-    '{
-        "impacto_organizacional": {
-            "peso": 30,
-            "descripcion": "Impacto en la organización y procesos"
-        },
-        "complejidad_tecnica": {
-            "peso": 25,
-            "descripcion": "Complejidad técnica del desarrollo"
-        },
-        "recursos_necesarios": {
-            "peso": 20,
-            "descripcion": "Recursos humanos y técnicos requeridos"
-        },
-        "tiempo_implementacion": {
-            "peso": 15,
-            "descripcion": "Tiempo estimado de implementación"
-        },
-        "alineacion_estrategica": {
-            "peso": 10,
-            "descripcion": "Alineación con objetivos estratégicos"
-        }
-    }'::jsonb,
+    '{"valid_enums": {"urgencia": ["baja", "media", "alta", "critica"], "frecuencia_uso": ["diario", "semanal", "mensual", "esporadico"], "departamento_solicitante": ["Académico", "Administrativo", "Financiero", "RRHH", "Investigación", "Extensión", "GTTD", "Otro"], "plataformas_involucradas": ["Canvas", "SAP", "PeopleSoft", "Office 365", "Teams", "Power BI", "SharePoint", "Moodle", "Zoom", "Sistema Interno", "Otra"]}, "platform_bonus": {"SAP": 15, "Zoom": 3, "Teams": 5, "Canvas": 10, "Moodle": 8, "Power BI": 8, "Office 365": 5, "PeopleSoft": 12, "SharePoint": 6, "UTP+ Class": 12, "UTP+ Portal": 8, "Sistema Interno": 7}, "scoring_weights": {"impact_defined": 20, "problem_identified": 25, "platforms_mentioned": 15, "description_detailed": 20, "stakeholders_identified": 20}, "timeframe_points": {"1_a_3_meses": 15, "3_a_6_meses": 10, "menos_1_mes": 25, "sin_definir": 5}, "department_weights": {"GTTD": 1.4, "RRHH": 1, "Académico": 1.2, "Extensión": 0.9, "Financiero": 1.1, "Administrativo": 1, "Investigación": 1.3}, "classification_thresholds": {"priority_p1_min": 90, "priority_p2_min": 70, "priority_p3_min": 40, "project_min_score": 40}}	'::jsonb,
     'Sistema',
     NOW(),
     true,

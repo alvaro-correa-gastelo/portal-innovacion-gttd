@@ -390,7 +390,7 @@ export function RealisticLeaderModal({ isOpen, onClose, request, userRole = "lid
                   </Badge>
                 </div>
                 <div className="flex items-center space-x-6 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  <span><strong>ID:</strong> {request?.id?.substring(0, 8) || 'N/A'}</span>
+                  <span><strong>ID:</strong> {String(request?.id || '').substring(0, 8) || 'N/A'}</span>
                   <span><strong>Solicitante:</strong> {request?.requester || request?.user_id}</span>
                   <span><strong>Departamento:</strong> {request?.department || request?.departamento_solicitante}</span>
                   <span><strong>Días esperando:</strong> {request?.daysInStatus || request?.days_since_created || 0}</span>
