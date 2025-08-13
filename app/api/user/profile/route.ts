@@ -15,22 +15,15 @@ export async function GET(request: NextRequest) {
     const sessionId = searchParams.get('sessionId');
     const userId = searchParams.get('userId');
 
-    // Validar parámetros requeridos
-    if (!sessionId && !userId) {
-      return NextResponse.json(
-        { 
-          error: 'Se requiere sessionId o userId',
-          code: 'MISSING_PARAMETERS'
-        },
-        { status: 400 }
-      );
-    }
+    // Generar IDs por defecto si no se proporcionan
+    const effectiveUserId = userId || `user_${Date.now()}`;
+    const effectiveSessionId = sessionId || `session_${Date.now()}`;
 
     // Simular datos del perfil del usuario
     // En producción, esto vendría de tu base de datos
     const userProfile = {
-      userId: userId || `user_${sessionId}`,
-      sessionId: sessionId,
+      userId: effectiveUserId,
+      sessionId: effectiveSessionId,
       name: 'Usuario Demo',
       email: 'usuario@utp.edu.pe',
       department: 'Académico',
@@ -60,7 +53,7 @@ export async function GET(request: NextRequest) {
       { 
         error: 'Error interno del servidor',
         code: 'INTERNAL_ERROR',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
       },
       { status: 500 }
     );
@@ -110,7 +103,7 @@ export async function POST(request: NextRequest) {
       { 
         error: 'Error interno del servidor',
         code: 'INTERNAL_ERROR',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
       },
       { status: 500 }
     );
