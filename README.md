@@ -1,21 +1,43 @@
-# Portal de Innovación GTTD
+# 🏆 Portal de Innovación GTTD
 
-Portal web para gestión de solicitudes tecnológicas con agente IA conversacional para la Universidad Tecnológica del Perú.
+**🥇 Ganador del Reto 1 - Programa Impulsa UTP 2024**
 
-## 🚀 Demo en Vivo
-[Ver Demo](https://portal-innovacion-gttd.vercel.app) *(Próximamente)*
+Portal web inteligente para gestión de solicitudes tecnológicas con agente IA conversacional, desarrollado para optimizar procesos de innovación en organizaciones.
 
 ## 🎯 Descripción del Proyecto
 
-El Portal de Innovación GTTD es una plataforma integral diseñada para optimizar la gestión de solicitudes tecnológicas en entornos universitarios. Incluye un agente de IA conversacional (InsightBot) que facilita el descubrimiento y estructuración de requerimientos tecnológicos.
+El Portal de Innovación GTTD es una plataforma integral que transforma cómo las organizaciones gestionan solicitudes tecnológicas. Combina interfaces intuitivas con inteligencia artificial para acelerar el descubrimiento, evaluación y aprobación de proyectos de innovación.
 
-## 🛠️ Tecnologías
+### ✨ **Problema que Resuelve:**
+- Procesos manuales lentos para gestionar solicitudes tecnológicas
+- Falta de estructura en la captura de requerimientos
+- Dificultad para hacer seguimiento y priorizar proyectos
+- Desconexión entre solicitantes y tomadores de decisión
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **UI Components**: Shadcn/ui, Lucide Icons
-- **Agente IA**: n8n + Gemini 1.5 Pro
-- **Base de Datos**: Supabase (PostgreSQL)
-- **Despliegue**: Vercel
+### 🎯 **Solución:**
+- **Chat IA conversacional** para descubrimiento estructurado de requerimientos
+- **Dashboards diferenciados** por rol (Usuario, Líder de Dominio, Líder Gerencial)
+- **Sistema de seguimiento** en tiempo real con timeline detallado
+- **Flujos automatizados** de aprobación y notificaciones
+
+## 🛠️ Stack Tecnológico
+
+### **Frontend**
+- **Next.js 15** con App Router
+- **TypeScript** para type safety
+- **Tailwind CSS** + **shadcn/ui** para UI moderna
+- **Framer Motion** para animaciones fluidas
+
+### **Backend & IA**
+- **PostgreSQL** (Neon) para persistencia
+- **N8N** para orquestación de flujos IA
+- **Google Gemini 2.5 Pro** para agente conversacional
+- **Vercel** para despliegue y APIs
+
+### **Integraciones**
+- **Webhooks** para comunicación N8N ↔ Frontend
+- **Rate limiting** y modo demo para protección
+- **Real-time updates** con eventos del sistema
 
 ## 📋 Características Principales
 
@@ -85,47 +107,86 @@ Base de Datos:
 ## 🚀 Instalación y Configuración
 
 ### **Prerrequisitos**
-- Node.js 18+
-- npm o yarn
-- Cuenta en Supabase
-- Cuenta en n8n (para el agente IA)
+- **Node.js 18+** y npm/pnpm
+- **PostgreSQL** (recomendado: Neon o Supabase)
+- **N8N** (self-hosted o cloud) para orquestación IA
+- **Google Gemini API Key** para el agente conversacional
 
-### **Instalación Local**
+### **1. Instalación Local**
 ```bash
 # Clonar repositorio
-git clone https://github.com/TU-USUARIO/portal-innovacion-gttd.git
+git clone https://github.com/alvaro-correa-gastelo/portal-innovacion-gttd.git
 cd portal-innovacion-gttd
 
 # Instalar dependencias
-npm install
+pnpm install
+
+# Copiar variables de entorno
+cp .env.example .env.local
 
 # Ejecutar en desarrollo
-npm run dev
+pnpm dev
 ```
 
-### **Variables de Entorno**
+### **2. Variables de Entorno**
 ```bash
-# .env.local
-NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_key
-NEXT_PUBLIC_N8N_WEBHOOK_URL=tu_n8n_webhook_url
+# .env.local - Configurar con tus credenciales reales
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
+NEXT_PUBLIC_N8N_WEBHOOK_URL=https://tu-n8n.com/webhook/chat
+
+# Configuración opcional para modo demo
+NEXT_PUBLIC_DEMO_MODE=false
+DEMO_MODE=false
 ```
 
-## 🤖 Configuración del Agente IA
+### **3. Configuración de Base de Datos**
+```bash
+# Ejecutar el esquema completo en tu PostgreSQL/Neon/Supabase
+psql -h tu-host -U tu-usuario -d tu-database -f db/sql/schema.sql
 
-### **1. Configurar n8n**
- - Seguir la guía: `GUIA_CONFIGURACION_AGENTE_IA_N8N.md`
- - Usar el workflow de producción en n8n (este repositorio no incluye archivos JSON de workflows). Consulta `DOCS/N8N_STATE_MODEL.md` y `DOCS/N8N_EVENT_ROUTER_AND_FINALIZATION.md` para el mapa de nodos y eventos.
- - Configurar credenciales de Gemini y Supabase
+# O copiar y ejecutar manualmente desde:
+# db/sql/schema.sql
+```
 
-### **2. Configurar Base de Datos**
-```sql
--- Ejecutar en Supabase
--- Ver scripts completos en: ARQUITECTURA_BD_AGENTE_IA_N8N.md
+**Tablas principales:**
+- `requests` - Solicitudes tecnológicas
+- `audit_logs` - Registro de auditoría y timeline
+- `session_states` - Estados de sesión N8N
+- `scoring_configurations` - Configuraciones de scoring
+- `configuration_audit` - Auditoría de configuraciones
+- `report_templates` - Plantillas de reportes
 
-CREATE TABLE conversations (...);
-CREATE TABLE requests (...);
-CREATE TABLE conversation_analytics (...);
+## 🤖 Configuración del Agente IA (N8N)
+
+### **Importar Workflow N8N**
+1. **Descargar el workflow**: `n8n/InsightBot AI v2.json`
+2. **Importar en N8N**: Settings → Import from file
+3. **Configurar credenciales**:
+   - **Google Gemini**: API Key para Gemini 2.5 Pro
+   - **PostgreSQL**: Conexión a tu base de datos
+   - **HTTP Request**: Webhook URL del frontend
+
+### **Configurar Webhook**
+```bash
+# URL del webhook N8N (configurar en .env.local)
+https://tu-n8n-instance.com/webhook/chat
+
+# El frontend enviará payloads como:
+{
+  "session_id": "uuid",
+  "message": "texto del usuario",
+  "event_type": "USER_MESSAGE"
+}
+```
+
+### **Flujo del Agente IA**
+1. **Recepción**: Webhook recibe mensaje del usuario
+2. **Contexto**: Carga historial de conversación
+3. **Procesamiento**: Gemini 2.5 Pro genera respuesta contextual
+4. **Extracción**: Analiza y estructura información
+5. **Respuesta**: Envía respuesta al frontend
+6. **Persistencia**: Guarda estado en base de datos
 ```
 
 ### **3. Endpoints del Agente**
@@ -242,6 +303,63 @@ Ver guía completa: `GUIA_DESPLIEGUE_GRATUITO.md`
 - Este proyecto integra un agente IA (n8n + Gemini). El código del portal y la lógica de integración son propios; los artefactos experimentales y borradores generados por IA se mantienen en `DOCS/ARCHIVED/` y no se publican.
 - Recomendación para GitHub: documentar claramente el flujo real (estado inicial `submitted`, rama de finalización tras `SUMMARY_CONFIRMED`) y enlazar solo a guías vigentes en `DOCS/`.
 - Recomendación para LinkedIn: comunicar que la solución combina ingeniería propia con un agente IA orquestado en n8n para acelerar descubrimiento y formalización de solicitudes. Enfatiza el resultado (ganaron el reto) y los aspectos técnicos clave (SPA con Next.js, integración n8n/Supabase, timeline robusto). No es necesario exponer prompts o borradores.
+
+## 📸 Screenshots
+
+### **Dashboard Principal**
+![Dashboard](docs/screenshots/dashboard.png)
+*Vista del dashboard Kanban con solicitudes organizadas por estado*
+
+### **Chat IA Conversacional**
+![Chat IA](docs/screenshots/chat-ia.png)
+*InsightBot guiando al usuario en el descubrimiento de requerimientos*
+
+### **Portal de Líderes**
+![Portal Líderes](docs/screenshots/portal-lideres.png)
+*Dashboard ejecutivo con métricas y solicitudes pendientes*
+
+## 🏆 Reconocimientos
+
+**🥇 Ganador del Reto 1 - Programa Impulsa UTP 2024**
+
+Este proyecto fue desarrollado como solución al primer reto del programa Impulsa UTP, enfocado en la innovación tecnológica para optimizar procesos organizacionales. El equipo multidisciplinario logró crear un MVP funcional que demuestra el potencial de combinar interfaces intuitivas con inteligencia artificial para resolver problemas reales.
+
+### **Equipo de Desarrollo**
+- **Desarrollo Full-Stack**: Álvaro Correa Gastelo
+- **Líder GTTRD**: Mapi
+- **Mentora**: Fabiola Pastrana
+- **Organizadora**: Diana Castillo
+
+## 🤝 Contribuir
+
+¿Interesado en contribuir? ¡Excelente! Este proyecto está abierto a mejoras y nuevas funcionalidades.
+
+### **Cómo Contribuir**
+1. **Fork** el repositorio
+2. **Crea** una rama para tu feature (`git checkout -b feature/amazing-feature`)
+3. **Commit** tus cambios (`git commit -m 'Add amazing feature'`)
+4. **Push** a la rama (`git push origin feature/amazing-feature`)
+5. **Abre** un Pull Request
+
+### **Áreas de Mejora**
+- 🔧 Optimización de performance
+- 🎨 Mejoras en UI/UX
+- 🤖 Expansión de capacidades IA
+- 📊 Nuevas métricas y reportes
+- 🔐 Funcionalidades de seguridad avanzada
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+
+## 📞 Contacto
+
+**Álvaro Correa Gastelo**
+- LinkedIn: [tu-linkedin]
+- Email: [tu-email]
+- GitHub: [@alvaro-correa-gastelo](https://github.com/alvaro-correa-gastelo)
+
+---
 
 ## 🔮 Roadmap
 
