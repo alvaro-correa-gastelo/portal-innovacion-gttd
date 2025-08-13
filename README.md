@@ -334,18 +334,41 @@ Este proyecto fue desarrollado como solución al primer reto del programa Impuls
 
 ¿Interesado en contribuir? ¡Excelente! Este proyecto está abierto a mejoras y nuevas funcionalidades.
 
-### **Cómo Contribuir**
-1. **Fork** el repositorio
-2. **Crea** una rama para tu feature (`git checkout -b feature/amazing-feature`)
-3. **Commit** tus cambios (`git commit -m 'Add amazing feature'`)
-4. **Push** a la rama (`git push origin feature/amazing-feature`)
-5. **Abre** un Pull Request
+### 🤖 Desarrollo Asistido por IA
+
+Este proyecto fue desarrollado utilizando **Windsurf Cascade**, una herramienta de IA para desarrollo de software, como parte del reto Impulsa UTP 2024.
+
+### Mi Contribución:
+- **🎯 Conceptualización**: Diseño de la arquitectura y flujo de la aplicación
+- **🧠 Lógica de Negocio**: Definición de criterios de scoring y evaluación
+- **🔧 Configuración**: Setup de base de datos, N8N workflows y deployment
+- **🎨 UX/UI**: Diseño de la experiencia de usuario y interfaces
+- **📊 Análisis**: Definición de métricas y reportes del sistema
+- **🚀 Liderazgo**: Gestión del proyecto y presentación final
+
+### Asistencia de IA:
+- **⚡ Aceleración de desarrollo**: Implementación rápida de componentes
+- **📝 Documentación**: Generación de README y comentarios de código
+- **🔍 Optimización**: Mejoras de rendimiento y buenas prácticas
+- **🧪 Testing**: Creación de scripts de prueba y validación
+
+Esta colaboración humano-IA demuestra cómo las herramientas modernas pueden potenciar la creatividad y productividad en el desarrollo de software, permitiendo enfocarse en la estrategia y diseño de soluciones innovadoras.
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
 ### **Áreas de Mejora**
 - 🔧 Optimización de performance
 - 🎨 Mejoras en UI/UX
 - 🤖 Expansión de capacidades IA
-- 📊 Nuevas métricas y reportes
+{{ ... }}
 - 🔐 Funcionalidades de seguridad avanzada
 
 ## 📄 Licencia
