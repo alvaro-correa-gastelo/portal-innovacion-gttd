@@ -19,25 +19,71 @@ export async function GET(request: NextRequest) {
     const effectiveUserId = userId || `user_${Date.now()}`;
     const effectiveSessionId = sessionId || `session_${Date.now()}`;
 
-    // Simular datos del perfil del usuario
-    // En producción, esto vendría de tu base de datos
+    // Perfiles realistas variados para demostración
+    const userProfiles = [
+      {
+        user_id: effectiveUserId,
+        name: "Dr. María Elena Rodríguez",
+        area: "Académico",
+        role: "Coordinadora de Innovación Educativa",
+        email: "maria.rodriguez@utp.edu.pe",
+        department: "Académico - Vicerrectoría de Investigación",
+        phone: "+51 1 315 9600 ext. 2847",
+        location: "Campus Lima - Edificio Central"
+      },
+      {
+        user_id: effectiveUserId,
+        name: "Ing. Carlos Mendoza Silva",
+        area: "Académico",
+        role: "Director de Tecnología Educativa",
+        email: "carlos.mendoza@utp.edu.pe",
+        department: "Académico - Dirección de Sistemas",
+        phone: "+51 1 315 9600 ext. 3142",
+        location: "Campus Lima - Torre Académica"
+      },
+      {
+        user_id: effectiveUserId,
+        name: "Dra. Ana Patricia Vega",
+        area: "Académico",
+        role: "Jefa de Laboratorios de Innovación",
+        email: "ana.vega@utp.edu.pe",
+        department: "Académico - Facultad de Ingeniería",
+        phone: "+51 1 315 9600 ext. 2956",
+        location: "Campus Lima - Laboratorios"
+      }
+    ];
+
+    // Seleccionar perfil basado en el userId o aleatorio
+    const profileIndex = userId ? 
+      Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % userProfiles.length :
+      Math.floor(Math.random() * userProfiles.length);
+    
+    const selectedProfile = userProfiles[profileIndex];
+
+    // Completar con datos dinámicos
     const userProfile = {
-      userId: effectiveUserId,
-      sessionId: effectiveSessionId,
-      name: 'Usuario Demo',
-      email: 'usuario@utp.edu.pe',
-      department: 'Académico',
-      role: 'Solicitante',
+      ...selectedProfile,
+      token_info: {
+        issued_at: new Date().toISOString(),
+        expires_in: 3600,
+        token_type: "Bearer"
+      },
+      session_info: {
+        last_login: new Date(Date.now() - Math.random() * 4 * 60 * 60 * 1000).toISOString(), // 0-4 horas atrás
+        session_duration: Math.floor(Math.random() * 300) + 120, // 2-7 minutos
+        ip_address: "190.216.234." + Math.floor(Math.random() * 255) // IP dinámica de Perú
+      },
       preferences: {
         notifications: true,
-        language: 'es'
+        language: 'es',
+        theme: Math.random() > 0.5 ? 'light' : 'dark'
       },
       stats: {
-        totalRequests: 3,
-        pendingRequests: 1,
-        approvedRequests: 2
-      },
-      lastActivity: new Date().toISOString()
+        totalRequests: Math.floor(Math.random() * 15) + 5, // 5-20 solicitudes
+        pendingRequests: Math.floor(Math.random() * 5) + 1, // 1-5 pendientes
+        approvedRequests: Math.floor(Math.random() * 10) + 2, // 2-12 aprobadas
+        rejectedRequests: Math.floor(Math.random() * 3) // 0-2 rechazadas
+      }
     };
 
     return NextResponse.json({
