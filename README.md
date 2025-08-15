@@ -184,7 +184,7 @@ NEXT_PUBLIC_N8N_WEBHOOK_URL=https://tu-n8n-instance.com/webhook/chat
 4. **Extracción**: Analiza y estructura información
 5. **Respuesta**: Envía respuesta al frontend
 6. **Persistencia**: Guarda estado en base de datos
-```
+
 
 ### **3. Endpoints del Agente**
 ```
