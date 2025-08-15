@@ -1,6 +1,6 @@
 # 🏆 Portal de Innovación GTTD
 
-**🥇 Ganador del Reto 1 - Programa Impulsa UTP 2024**
+**🥇 Ganador del Reto 1 - Programa Impulsa UTP 2025**
 
 Portal web inteligente para gestión de solicitudes tecnológicas con agente IA conversacional, desarrollado para optimizar procesos de innovación en organizaciones.
 
@@ -157,7 +157,7 @@ psql -h tu-host -U tu-usuario -d tu-database -f db/sql/schema-complete.sql
 ## 🤖 Configuración del Agente IA (N8N)
 
 ### **Importar Workflow N8N**
-1. **Colocar el workflow JSON** en la carpeta `n8n/` (por ejemplo: `n8n/InsightBot AI v2.json`).
+1. **Colocar el workflow JSON** en la carpeta `n8n/` (por ejemplo: `n8n/InsightAgent Final.json`).
 2. **Importar en n8n**: Settings → Import from file → selecciona tu JSON.
 3. **Configurar credenciales**:
    - **Google Gemini**: API Key para Gemini 2.5 Pro
