@@ -59,16 +59,13 @@ El Portal de Innovación GTTD es una plataforma integral que transforma cómo la
 - Métricas de progreso
 - Notificaciones automáticas
 
-### 📁 **Gestión de Documentos**
-- Carga y organización de archivos
-- Versionado de documentos
-- Integración con solicitudes
+### 📁 Documentos (prototipo)
+- Vista experimental en `components/documents-view.tsx`
+- No habilitado en producción; se mantiene como referencia UI para futuras iteraciones.
 
-### 📈 **Analytics y Reportes**
-- Métricas de rendimiento
-- Reportes de solicitudes
-- Dashboard ejecutivo
-- Análisis de tendencias
+### 📈 Reportes/Analytics (prototipo)
+- Vista experimental en `components/reports-analytics.tsx`
+- No habilitado en producción.
 
 ## 🏗️ Arquitectura del Sistema
 
@@ -143,10 +140,10 @@ DEMO_MODE=false
 ### **3. Configuración de Base de Datos**
 ```bash
 # Ejecutar el esquema completo en tu PostgreSQL/Neon/Supabase
-psql -h tu-host -U tu-usuario -d tu-database -f db/sql/schema.sql
+psql -h tu-host -U tu-usuario -d tu-database -f db/sql/schema-complete.sql
 
 # O copiar y ejecutar manualmente desde:
-# db/sql/schema.sql
+# db/sql/schema-complete.sql
 ```
 
 **Tablas principales:**
@@ -160,8 +157,8 @@ psql -h tu-host -U tu-usuario -d tu-database -f db/sql/schema.sql
 ## 🤖 Configuración del Agente IA (N8N)
 
 ### **Importar Workflow N8N**
-1. **Descargar el workflow**: `n8n/InsightBot AI v2.json`
-2. **Importar en N8N**: Settings → Import from file
+1. **Colocar el workflow JSON** en la carpeta `n8n/` (por ejemplo: `n8n/InsightBot AI v2.json`).
+2. **Importar en n8n**: Settings → Import from file → selecciona tu JSON.
 3. **Configurar credenciales**:
    - **Google Gemini**: API Key para Gemini 2.5 Pro
    - **PostgreSQL**: Conexión a tu base de datos
@@ -169,8 +166,8 @@ psql -h tu-host -U tu-usuario -d tu-database -f db/sql/schema.sql
 
 ### **Configurar Webhook**
 ```bash
-# URL del webhook N8N (configurar en .env.local)
-https://tu-n8n-instance.com/webhook/chat
+# URL del webhook de n8n (configurar en .env.local)
+NEXT_PUBLIC_N8N_WEBHOOK_URL=https://tu-n8n-instance.com/webhook/chat
 
 # El frontend enviará payloads como:
 {
@@ -304,19 +301,9 @@ Ver guía completa: `GUIA_DESPLIEGUE_GRATUITO.md`
 - Recomendación para GitHub: documentar claramente el flujo real (estado inicial `submitted`, rama de finalización tras `SUMMARY_CONFIRMED`) y enlazar solo a guías vigentes en `DOCS/`.
 - Recomendación para LinkedIn: comunicar que la solución combina ingeniería propia con un agente IA orquestado en n8n para acelerar descubrimiento y formalización de solicitudes. Enfatiza el resultado (ganaron el reto) y los aspectos técnicos clave (SPA con Next.js, integración n8n/Supabase, timeline robusto). No es necesario exponer prompts o borradores.
 
-## 📸 Screenshots
+## 📸 Capturas y material de demo
 
-### **Dashboard Principal**
-![Dashboard](docs/screenshots/dashboard.png)
-*Vista del dashboard Kanban con solicitudes organizadas por estado*
-
-### **Chat IA Conversacional**
-![Chat IA](docs/screenshots/chat-ia.png)
-*InsightBot guiando al usuario en el descubrimiento de requerimientos*
-
-### **Portal de Líderes**
-![Portal Líderes](docs/screenshots/portal-lideres.png)
-*Dashboard ejecutivo con métricas y solicitudes pendientes*
+Para ver el funcionamiento, consulta el carrusel y el video demo enlazados en la publicación de LinkedIn. Las capturas locales se omiten del repo para mantenerlo liviano y evitar rutas rotas.
 
 ## 🏆 Reconocimientos
 

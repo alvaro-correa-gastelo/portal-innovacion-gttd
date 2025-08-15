@@ -26,6 +26,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# docs (exclude archived material and workflows)
-DOCS/ARCHIVED/
-DOCS/ARCHIVED/**
+# docs (exclude entire folder from repo)
+DOCS/
+DOCS/**
